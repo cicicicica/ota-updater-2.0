@@ -44,6 +44,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -51,7 +53,7 @@ import com.otaupdater.DownloadReceiver;
 import com.otaupdater.R;
 import com.otaupdater.TabDisplay;
 
-public class KernelInfo {
+public class KernelInfo implements Parcelable {
     public String kernelName;
     public String version;
     public String changelog;
@@ -59,8 +61,8 @@ public class KernelInfo {
     public String md5;
     public Date date;
 
-    public KernelInfo(String romName, String version, String changelog, String downurl, String md5, Date date) {
-        this.kernelName = romName;
+    public KernelInfo(String kernelName, String version, String changelog, String downurl, String md5, Date date) {
+        this.kernelName = kernelName;
         this.version = version;
         this.changelog = changelog;
         this.url = downurl;
@@ -86,6 +88,39 @@ public class KernelInfo {
         i.putExtra("kernel_info_md5", md5);
         i.putExtra("kernel_info_date", Utils.formatDate(date));
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(kernelName);
+        dest.writeString(version);
+        dest.writeString(changelog);
+        dest.writeString(url);
+        dest.writeString(md5);
+        dest.writeLong(date.getTime());
+    }
+
+    public static final Creator<KernelInfo> CREATOR = new Creator<KernelInfo>() {
+        @Override
+        public KernelInfo[] newArray(int size) {
+            return new KernelInfo[size];
+        }
+
+        @Override
+        public KernelInfo createFromParcel(Parcel source) {
+            return new KernelInfo(
+                    source.readString(),
+                    source.readString(),
+                    source.readString(),
+                    source.readString(),
+                    source.readString(),
+                    new Date(source.readLong()));
+        }
+    };
 
     public void showUpdateNotif(Context ctx) {
         Intent mainInent = new Intent(ctx, TabDisplay.class);

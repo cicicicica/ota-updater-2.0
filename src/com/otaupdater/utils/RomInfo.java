@@ -44,6 +44,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -51,7 +53,7 @@ import com.otaupdater.DownloadReceiver;
 import com.otaupdater.R;
 import com.otaupdater.TabDisplay;
 
-public class RomInfo {
+public class RomInfo implements Parcelable {
     public String romName;
     public String version;
     public String changelog;
@@ -86,6 +88,39 @@ public class RomInfo {
         i.putExtra("rom_info_md5", md5);
         i.putExtra("rom_info_date", Utils.formatDate(date));
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(romName);
+        dest.writeString(version);
+        dest.writeString(changelog);
+        dest.writeString(url);
+        dest.writeString(md5);
+        dest.writeLong(date.getTime());
+    }
+
+    public static final Creator<RomInfo> CREATOR = new Creator<RomInfo>() {
+        @Override
+        public RomInfo[] newArray(int size) {
+            return new RomInfo[size];
+        }
+
+        @Override
+        public RomInfo createFromParcel(Parcel source) {
+            return new RomInfo(
+                    source.readString(),
+                    source.readString(),
+                    source.readString(),
+                    source.readString(),
+                    source.readString(),
+                    new Date(source.readLong()));
+        }
+    };
 
     public void showUpdateNotif(Context ctx) {
         Intent mainInent = new Intent(ctx, TabDisplay.class);
