@@ -19,7 +19,7 @@
     android:versionCode="1"
     android:versionName="1.90-alpha">
 
-    <uses-sdk android:minSdkVersion="11" android:targetSdkVersion="16" />
+    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="16" />
 
     <permission android:name="com.otaupdater.permission.KEY_VERIFY" android:protectionLevel="signature" />
     <permission android:name="com.otaupdater.permission.C2D_MESSAGE" android:protectionLevel="signature" />

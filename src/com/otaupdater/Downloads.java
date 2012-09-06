@@ -20,31 +20,31 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-import android.app.ActionBar;
 import android.app.DownloadManager;
-import android.app.ListActivity;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockListActivity;
+import com.actionbarsherlock.view.MenuItem;
 import com.otaupdater.utils.Config;
 
-public class Downloads extends ListActivity implements ActionBar.OnNavigationListener {
+public class Downloads extends SherlockListActivity implements ActionBar.OnNavigationListener {
 
     private ArrayList<String> fileList = new ArrayList<String>();
     private DownloadAdapter dmAdapter = null;
@@ -78,7 +78,7 @@ public class Downloads extends ListActivity implements ActionBar.OnNavigationLis
 
         setContentView(R.layout.downloads);
 
-        final ActionBar bar = getActionBar();
+        final ActionBar bar = getSupportActionBar();
         bar.setDisplayHomeAsUpEnabled(true);
         bar.setDisplayShowTitleEnabled(false);
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
@@ -93,7 +93,7 @@ public class Downloads extends ListActivity implements ActionBar.OnNavigationLis
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt("state", getActionBar().getSelectedNavigationIndex());
+        outState.putInt("state", getSupportActionBar().getSelectedNavigationIndex());
     }
 
     @Override

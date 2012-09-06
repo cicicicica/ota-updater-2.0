@@ -20,21 +20,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.MenuItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-public class License extends Activity {
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.MenuItem;
+
+public class License extends SherlockActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final ActionBar bar = getActionBar();
+        final ActionBar bar = getSupportActionBar();
         bar.setDisplayHomeAsUpEnabled(true);
 
         BufferedReader in = null;

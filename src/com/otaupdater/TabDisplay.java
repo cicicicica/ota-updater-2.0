@@ -18,30 +18,29 @@ package com.otaupdater;
 
 import java.util.ArrayList;
 
-import android.app.ActionBar;
-import android.app.ActionBar.Tab;
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v13.app.FragmentPagerAdapter;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.ActionBar.Tab;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gcm.GCMRegistrar;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.Utils;
 
-public class TabDisplay extends FragmentActivity {
+public class TabDisplay extends SherlockFragmentActivity {
     public static final String ROM_NOTIF_ACTION = "com.otaupdater.action.ROM_NOTIF_ACTION";
     public static final String KERNEL_NOTIF_ACTION = "com.otaupdater.action.KERNEL_NOTIF_ACTION";
 
@@ -132,7 +131,7 @@ public class TabDisplay extends FragmentActivity {
         mViewPager.setId(R.id.pager);
         setContentView(mViewPager);
 
-        final ActionBar bar = getActionBar();
+        final ActionBar bar = getSupportActionBar();
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_TITLE, ActionBar.DISPLAY_SHOW_TITLE);
         bar.setTitle(R.string.app_name);
@@ -151,7 +150,7 @@ public class TabDisplay extends FragmentActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt("tab", getActionBar().getSelectedNavigationIndex());
+        outState.putInt("tab", getSupportActionBar().getSelectedNavigationIndex());
     }
 
     public static class TabsAdapter extends FragmentPagerAdapter
@@ -172,10 +171,10 @@ public class TabDisplay extends FragmentActivity {
             }
         }
 
-        public TabsAdapter(Activity activity, ViewPager pager) {
-            super(activity.getFragmentManager());
+        public TabsAdapter(SherlockFragmentActivity activity, ViewPager pager) {
+            super(activity.getSupportFragmentManager());
             ctx = activity;
-            mActionBar = activity.getActionBar();
+            mActionBar = activity.getSupportActionBar();
             mViewPager = pager;
             mViewPager.setAdapter(this);
             mViewPager.setOnPageChangeListener(this);
@@ -235,7 +234,7 @@ public class TabDisplay extends FragmentActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
+        MenuInflater inflater = getSupportMenuInflater();
         inflater.inflate(R.menu.actionbar_menu, menu);
         return true;
     }

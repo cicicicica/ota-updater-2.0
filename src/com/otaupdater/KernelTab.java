@@ -19,6 +19,7 @@ package com.otaupdater;
 import java.text.DateFormat;
 import java.util.Date;
 
+import android.annotation.TargetApi;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -31,6 +32,7 @@ import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.KernelInfo.KernelInfoListener;
 import com.otaupdater.utils.Utils;
 
+@TargetApi(11)
 public class KernelTab extends PreferenceFragment {
 
     private Config cfg;

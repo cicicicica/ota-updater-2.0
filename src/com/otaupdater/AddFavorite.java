@@ -16,12 +16,15 @@
 
 package com.otaupdater;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 
-public class AddFavorite extends PreferenceActivity {
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+
+public class AddFavorite extends SherlockPreferenceActivity {
     @Override
     @SuppressWarnings("deprecation")
     public void onCreate(Bundle savedInstanceState) {
@@ -30,11 +33,14 @@ public class AddFavorite extends PreferenceActivity {
     }
 
     @SuppressWarnings("deprecation")
+    @TargetApi(11)
     public void addPref(String... params) {
         String tweakName = params[0];
         Preference pref = new Preference(this);
         pref.setTitle(tweakName);
-        pref.setIcon(R.drawable.ic_download_default);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            pref.setIcon(R.drawable.ic_download_default);
+        }
         ((PreferenceScreen) findPreference("accounts_screen")).addPreference(pref);
     }
 }

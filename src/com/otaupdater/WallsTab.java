@@ -19,7 +19,6 @@ package com.otaupdater;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import android.app.Fragment;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -33,9 +32,10 @@ import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.Spinner;
 
+import com.actionbarsherlock.app.SherlockFragment;
 import com.otaupdater.utils.ImageAdapter;
 
-public class WallsTab extends Fragment implements OnItemSelectedListener {
+public class WallsTab extends SherlockFragment implements OnItemSelectedListener {
 	private int screenHeight;
 	private int screenWidth;
 	private String deviceRes;

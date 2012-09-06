@@ -19,6 +19,7 @@ package com.otaupdater;
 import java.text.DateFormat;
 import java.util.Date;
 
+import android.annotation.TargetApi;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -31,6 +32,7 @@ import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.RomInfo.RomInfoListener;
 import com.otaupdater.utils.Utils;
 
+@TargetApi(11)
 public class ROMTab extends PreferenceFragment {
 
     private Config cfg;

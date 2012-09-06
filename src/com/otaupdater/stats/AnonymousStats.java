@@ -16,21 +16,21 @@
 
 package com.otaupdater.stats;
 
-import android.app.ActionBar;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
-import android.view.MenuItem;
 
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+import com.actionbarsherlock.view.MenuItem;
 import com.otaupdater.R;
 import com.otaupdater.utils.Config;
 
 @SuppressWarnings("deprecation")
-public class AnonymousStats extends PreferenceActivity implements Preference.OnPreferenceChangeListener {
+public class AnonymousStats extends SherlockPreferenceActivity implements Preference.OnPreferenceChangeListener {
 
     private static final String VIEW_STATS = "pref_view_stats";
     protected static final String ANONYMOUS_OPT_IN = "pref_anonymous_opt_in";
@@ -47,7 +47,7 @@ public class AnonymousStats extends PreferenceActivity implements Preference.OnP
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final ActionBar bar = getActionBar();
+        final ActionBar bar = getSupportActionBar();
         bar.setDisplayHomeAsUpEnabled(true);
 
         cfg = Config.getInstance(getApplicationContext());

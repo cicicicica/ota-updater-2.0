@@ -16,6 +16,7 @@
 
 package com.otaupdater;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -28,6 +29,7 @@ import android.preference.PreferenceScreen;
 
 import com.otaupdater.utils.Config;
 
+@TargetApi(11)
 public class AboutTab extends PreferenceFragment {
 
     private Preference aboutOtaUpdater;

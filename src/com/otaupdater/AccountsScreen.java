@@ -16,15 +16,16 @@
 
 package com.otaupdater;
 
-import android.app.ActionBar;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceActivity;
-import android.view.MenuItem;
 
-public class AccountsScreen extends PreferenceActivity implements OnPreferenceClickListener {
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+import com.actionbarsherlock.view.MenuItem;
+
+public class AccountsScreen extends SherlockPreferenceActivity implements OnPreferenceClickListener {
     private Dialog dialog;
 
     private Preference viewProfile;
@@ -34,7 +35,7 @@ public class AccountsScreen extends PreferenceActivity implements OnPreferenceCl
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final ActionBar bar = getActionBar();
+        final ActionBar bar = getSupportActionBar();
         bar.setDisplayHomeAsUpEnabled(true);
 
         addPreferencesFromResource(R.xml.accounts_screen);
