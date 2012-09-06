@@ -320,11 +320,6 @@ public class Utils {
         return null;
     }
 
-    public static String formatDate(Date date) {
-        if (date == null) return null;
-        return new SimpleDateFormat("yyyyMMdd-kkmm").format(date);
-    }
-
     public static boolean isRomUpdate(RomInfo info) {
         if (info == null) return false;
         if (info.version != null) {
@@ -398,7 +393,7 @@ public class Utils {
                             jsonRom.getString("changelog"),
                             jsonRom.getString("url"),
                             jsonRom.getString("md5"),
-                            Utils.parseDate(jsonRom.getString("date")));
+                            new Date(jsonRom.getLong("date")));
 
                     if (Utils.isRomUpdate(info)) {
                         cfg.storeRomUpdate(info);
@@ -422,7 +417,7 @@ public class Utils {
                             jsonKernel.getString("changelog"),
                             jsonKernel.getString("url"),
                             jsonKernel.getString("md5"),
-                            Utils.parseDate(jsonKernel.getString("date")));
+                            new Date(jsonKernel.getLong("date")));
 
                     if (Utils.isKernelUpdate(info)) {
                         cfg.storeKernelUpdate(info);

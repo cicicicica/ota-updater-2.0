@@ -17,6 +17,7 @@
 package com.otaupdater.utils;
 
 import java.io.File;
+import java.util.Date;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -118,7 +119,7 @@ public class Config {
                     PREFS.getString("rom_info_changelog", null),
                     PREFS.getString("rom_info_url", null),
                     PREFS.getString("rom_info_md5", null),
-                    Utils.parseDate(PREFS.getString("rom_info_date", null)));
+                    new Date(PREFS.getLong("rom_info_date", System.currentTimeMillis())));
         }
 
         if (PREFS.contains("kernel_info_name")) {
@@ -127,7 +128,7 @@ public class Config {
                     PREFS.getString("kernel_info_changelog", null),
                     PREFS.getString("kernel_info_url", null),
                     PREFS.getString("kernel_info_md5", null),
-                    Utils.parseDate(PREFS.getString("kernel_info_date", null)));
+                    new Date(PREFS.getLong("kernel_info_date", System.currentTimeMillis())));
         }
 
         try {
@@ -257,7 +258,7 @@ public class Config {
             editor.putString("rom_info_changelog", info.changelog);
             editor.putString("rom_info_url", info.url);
             editor.putString("rom_info_md5", info.md5);
-            editor.putString("rom_info_date", Utils.formatDate(info.date));
+            editor.putLong("rom_info_date", info.date.getTime());
             editor.commit();
         }
     }
@@ -291,7 +292,7 @@ public class Config {
             editor.putString("kernel_info_changelog", info.changelog);
             editor.putString("kernel_info_url", info.url);
             editor.putString("kernel_info_md5", info.md5);
-            editor.putString("kernel_info_date", Utils.formatDate(info.date));
+            editor.putLong("kernel_info_date", info.date.getTime());
             editor.commit();
         }
     }

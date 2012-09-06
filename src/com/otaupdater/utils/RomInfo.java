@@ -77,7 +77,7 @@ public class RomInfo implements Parcelable {
                 i.getStringExtra("rom_info_changelog"),
                 i.getStringExtra("rom_info_url"),
                 i.getStringExtra("rom_info_md5"),
-                Utils.parseDate(i.getStringExtra("rom_info_date")));
+                new Date(i.getLongExtra("rom_info_date", System.currentTimeMillis())));
     }
 
     public void addToIntent(Intent i) {
@@ -86,7 +86,7 @@ public class RomInfo implements Parcelable {
         i.putExtra("rom_info_changelog", changelog);
         i.putExtra("rom_info_url", url);
         i.putExtra("rom_info_md5", md5);
-        i.putExtra("rom_info_date", Utils.formatDate(date));
+        i.putExtra("rom_info_date", date.getTime());
     }
 
     @Override
@@ -312,7 +312,7 @@ public class RomInfo implements Parcelable {
                             json.getString("changelog"),
                             json.getString("url"),
                             json.getString("md5"),
-                            Utils.parseDate(json.getString("date")));
+                            new Date(json.getLong("date")));
                 } else {
                     if (e != null) e.consumeContent();
                     error = "Server responded with error " + status;
