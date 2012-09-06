@@ -127,9 +127,9 @@ public class TabDisplay extends SherlockFragmentActivity {
             }
         }
 
-        mViewPager = new ViewPager(this);
-        mViewPager.setId(R.id.pager);
-        setContentView(mViewPager);
+        setContentView(R.layout.main);
+
+        mViewPager = (ViewPager) findViewById(R.id.pager);
 
         final ActionBar bar = getSupportActionBar();
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);

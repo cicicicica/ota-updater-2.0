@@ -26,7 +26,6 @@
 
     <string name="notif_text_rom">OTA ROM Update Available</string>
     <string name="notif_text_kernel">OTA Kernel Update Available</string>
-    <string name="notif_text_app">OTA App Update Available</string>
     <string name="notif_source">OTA Updater</string>
     <string name="notif_downloading">OTA Update Downloading</string>
     <string name="notif_download">Download</string>
@@ -110,14 +109,12 @@
     <string name="updates_error">Error fetching update info: %1$s</string>
     <string name="updates_new">New update: %1$s (version %2$s)\nTap to download/flash!</string>
 
-    <string name="rom_title">ROM</string>
     <string name="rom_updates">ROM Updates</string>
     <string name="rom_version">ROM Version</string>
     <string name="rom_info_title">ROM Information</string>
     <string name="rom_unsupported_title">Unsupported ROM</string>
     <string name="rom_unsupported_summary">The ROM developer has not enabled support for the OTA Updater! Please ask them (kindly) to add support before using this app!\n\n(rom.ota.prop missing)</string>
     
-    <string name="kernel_title">Kernel</string>
     <string name="kernel_updates">Kernel Updates</string>
     <string name="kernel_version">Kernel Version</string>
     <string name="kernel_version_unknown">Unknown Kernel Version</string>
@@ -178,8 +175,6 @@
     <string name="settings_notif_title">Notify me of new updates</string>
     <string name="settings_notif_summary_off">Update notifications will not be shown\nYou will have to open the app manually to see if there are updates</string>
     <string name="settings_notif_summary_on">Update notifications will be shown</string>
-    <string name="settings_device_title">Device Settings</string>
-    <string name="settings_device_summary">Configure device-specific settings.\n(Caution: Only for advanced users!)</string>
     <string name="settings_wifidl_title">Downloads on Wi-Fi only</string>
     <string name="settings_wifidl_summary_on">Updates will only be downloaded when a Wi-Fi connection is available</string>
     <string name="settings_wifidl_summary_off">Updates will be downloaded on whatever connection is available.\n\nWARNING: Updates will download on the mobile network if Wi-Fi is unavailable. The updates may be quite large and possibly result in overage charges.</string>
