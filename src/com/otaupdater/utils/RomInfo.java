@@ -88,10 +88,10 @@ public class RomInfo {
     }
 
     public void showUpdateNotif(Context ctx) {
-        Intent mainInent = new Intent(ctx, TabDisplay.class);
-        mainInent.setAction(TabDisplay.ROM_NOTIF_ACTION);
-        this.addToIntent(mainInent);
-        PendingIntent mainPIntent = PendingIntent.getActivity(ctx, 0, mainInent, PendingIntent.FLAG_CANCEL_CURRENT);
+        Intent mainIntent = new Intent(ctx, TabDisplay.class);
+        mainIntent.setAction(TabDisplay.ROM_NOTIF_ACTION);
+        this.addToIntent(mainIntent);
+        PendingIntent mainPIntent = PendingIntent.getActivity(ctx, 0, mainIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 
         Intent dlInent = new Intent(ctx, DownloadReceiver.class);
         dlInent.setAction(DownloadReceiver.DL_ROM_ACTION);
@@ -145,7 +145,7 @@ public class RomInfo {
     public void showUpdateDialog(final Context ctx) {
         AlertDialog.Builder alert = new AlertDialog.Builder(ctx);
         alert.setTitle(R.string.alert_update_title);
-        alert.setMessage(ctx.getString(R.string.alert_update_rom_to, romName, version));
+        alert.setMessage(ctx.getString(R.string.alert_update_rom_to, romName, version + "\n" + changelog));
 
         alert.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
             @Override
