@@ -45,7 +45,9 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
@@ -349,8 +351,7 @@ public class Utils {
         params.add(new BasicNameValuePair("do", "register"));
         params.add(new BasicNameValuePair("reg_id", regID));
         params.add(new BasicNameValuePair("device", android.os.Build.DEVICE.toLowerCase()));
-        params.add(new BasicNameValuePair("device_id",
-                md5(((TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE)).getDeviceId())));
+        params.add(new BasicNameValuePair("device_id", getDeviceID(ctx)));
 
         if (Utils.isRomOtaEnabled()) params.add(new BasicNameValuePair("rom_id", Utils.getRomOtaID()));
         if (Utils.isKernelOtaEnabled()) params.add(new BasicNameValuePair("kernel_id", Utils.getKernelOtaID()));
@@ -438,6 +439,20 @@ public class Utils {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static String getDeviceID(Context ctx) {
+        String deviceID = ((TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE)).getDeviceId();
+        if (deviceID == null) {
+            WifiManager wm = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
+            if (wm.isWifiEnabled()) {
+                deviceID = wm.getConnectionInfo().getMacAddress();
+            } else {
+                //fallback to ANDROID_ID - gets reset on data wipe, but it's better than nothing
+                deviceID = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
+            }
+        }
+        return md5(deviceID);
     }
 
     public static String sanitizeName(String name) {
