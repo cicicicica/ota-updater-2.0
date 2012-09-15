@@ -123,10 +123,10 @@ public class RomInfo implements Parcelable {
     };
 
     public void showUpdateNotif(Context ctx) {
-        Intent mainInent = new Intent(ctx, TabDisplay.class);
-        mainInent.setAction(TabDisplay.ROM_NOTIF_ACTION);
-        this.addToIntent(mainInent);
-        PendingIntent mainPIntent = PendingIntent.getActivity(ctx, 0, mainInent, PendingIntent.FLAG_CANCEL_CURRENT);
+        Intent mainIntent = new Intent(ctx, TabDisplay.class);
+        mainIntent.setAction(TabDisplay.ROM_NOTIF_ACTION);
+        this.addToIntent(mainIntent);
+        PendingIntent mainPIntent = PendingIntent.getActivity(ctx, 0, mainIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 
         Intent dlInent = new Intent(ctx, DownloadReceiver.class);
         dlInent.setAction(DownloadReceiver.DL_ROM_ACTION);
