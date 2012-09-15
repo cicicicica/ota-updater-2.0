@@ -20,19 +20,19 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-import android.app.DownloadManager;
-import android.content.Context;
-import android.database.Cursor;
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
-import android.support.v4.widget.CursorAdapter;
+import android.os.RemoteException;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -42,13 +42,22 @@ import android.widget.Toast;
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockListActivity;
 import com.actionbarsherlock.view.MenuItem;
+import com.otaupdater.DownloadService.BindUtil;
+import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.utils.Config;
+import com.otaupdater.utils.DlState;
 
-public class Downloads extends SherlockListActivity implements ActionBar.OnNavigationListener {
+public class Downloads extends SherlockListActivity implements ActionBar.OnNavigationListener, ServiceConnection {
 
     private ArrayList<String> fileList = new ArrayList<String>();
-    private DownloadAdapter dmAdapter = null;
     private ArrayAdapter<String> fileAdapter = null;
+
+    private ArrayList<DlState> dlList = new ArrayList<DlState>();
+    private DownloadAdapter dlAdapter = null;
+
+    private IDownloadService service = null;
+    private Token token;
+
     private int state = 0;
 
     private static final int REFRESH_DELAY = 1000;
@@ -67,6 +76,18 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
     };
 
     @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        Downloads.this.service = IDownloadService.Stub.asInterface(service);
+        updateFileList();
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        Downloads.this.service = null;
+        updateFileList();
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -77,6 +98,8 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
         }
 
         setContentView(R.layout.downloads);
+
+        token = BindUtil.bindToService(this, this);
 
         final ActionBar bar = getSupportActionBar();
         bar.setDisplayHomeAsUpEnabled(true);
@@ -110,9 +133,10 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
 
     @Override
     protected void onDestroy() {
-        if (dmAdapter != null) {
-            dmAdapter.getCursor().close();
-            dmAdapter = null;
+        BindUtil.unbindFromService(token);
+        if (dlAdapter != null) {
+            dlList.clear();
+            dlAdapter = null;
         }
         if (fileAdapter != null) {
             fileList.clear();
@@ -144,9 +168,8 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
     protected void onListItemClick(ListView l, View v, int position, long id) {
         String path;
         if (state < 2) {
-            Cursor c = dmAdapter.getCursor();
-            c.moveToPosition(position);
-            path = c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_FILENAME));
+            DlState dlState = dlList.get(position);
+            path = dlState.getDestFile().getAbsolutePath();
         } else {
             path = fileList.get(position);
             path = (state == 2 ? Config.ROM_DL_PATH : Config.KERNEL_DL_PATH) + path;
@@ -157,26 +180,29 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
 
     private void updateFileList() {
         if (state < 2) {
-            DownloadManager.Query query = new DownloadManager.Query();
-            if (state == 0) {
-                query.setFilterByStatus(DownloadManager.STATUS_PAUSED | DownloadManager.STATUS_PENDING | DownloadManager.STATUS_RUNNING);
-            } else {
-                query.setFilterByStatus(DownloadManager.STATUS_FAILED | DownloadManager.STATUS_SUCCESSFUL);
+            dlList.clear();
+            if (service != null) {
+                try {
+                    int filter = 0;
+                    if (state == 0) {
+                        filter = DlState.FILTER_ACTIVE | DlState.FILTER_PAUSED;
+                    } else if (state == 1) {
+                        filter = DlState.FILTER_COMPLETED | DlState.FILTER_CANCELLED;
+                    }
+                    service.getDownloadsFilt(dlList, filter);
+                } catch (RemoteException e) { }
             }
 
-            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-            Cursor c = dm.query(query);
-
-            if (dmAdapter == null) {
-                dmAdapter = new DownloadAdapter(this, c, 0);
-                getListView().setAdapter(dmAdapter);
+            if (dlAdapter == null) {
+                dlAdapter = new DownloadAdapter();
+                getListView().setAdapter(dlAdapter);
 
                 if (fileAdapter != null) {
                     fileList.clear();
                     fileAdapter = null;
                 }
             } else {
-                dmAdapter.changeCursor(c);
+                dlAdapter.notifyDataSetChanged();
             }
 
             REFRESH_HANDLER.sendMessageDelayed(REFRESH_HANDLER.obtainMessage(), REFRESH_DELAY);
@@ -193,162 +219,126 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
                 fileAdapter = new ArrayAdapter<String>(this, R.layout.download_file, R.id.filename, fileList);
                 getListView().setAdapter(fileAdapter);
 
-                if (dmAdapter != null) {
-                    dmAdapter.getCursor().close();
-                    dmAdapter = null;
+                if (dlAdapter != null) {
+                    dlList.clear();
+                    dlAdapter = null;
                 }
             } else {
                 fileAdapter.notifyDataSetChanged();
             }
+
+            REFRESH_HANDLER.removeCallbacksAndMessages(null);
         }
     }
 
-    protected static class DownloadAdapter extends CursorAdapter {
-        private static final int SCALE_KBYTES = 1024;
-        private static final int KBYTE_THRESH = 920; //0.9kb
-
-        private static final int SCALE_MBYTES = 1048576;
-        private static final int MBYTE_THRESH = 943718; //0.9mb
-
-        private static final int SCALE_GBYTES = 1073741824;
-        private static final int GBYTE_THRESH = 966367641; //0.9gb
-
-        public DownloadAdapter(Context context, Cursor c, int flags) {
-            super(context, c, flags);
+    private class DownloadAdapter extends BaseAdapter {
+        @Override
+        public int getCount() {
+            return dlList.size();
         }
 
         @Override
-        public void bindView(View view, Context ctx, Cursor c) {
-            ImageView icon = (ImageView) view.findViewById(R.id.download_icon);
-            ProgressBar bar = (ProgressBar) view.findViewById(R.id.download_progress_bar);
-            TextView titleView = (TextView) view.findViewById(R.id.download_title);
-            TextView subtxtView = (TextView) view.findViewById(R.id.download_subtext);
-            TextView bytesView = (TextView) view.findViewById(R.id.download_bytes_text);
-            TextView pctView = (TextView) view.findViewById(R.id.download_pct_text);
+        public Object getItem(int position) {
+            return dlList.get(position);
+        }
 
-            int status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
-            int reason = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));
-            int downBytes = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
-            int totalBytes = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
-            String name = c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_DESCRIPTION));
-            String fileName = c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_FILENAME));
+        @Override
+        public long getItemId(int position) {
+            return dlList.get(position).getId();
+        }
 
-            titleView.setText(name);
-            if (fileName.contains("/ROM/")) {
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = getLayoutInflater().inflate(R.layout.download_item, parent, false);
+            }
+
+            ImageView icon = (ImageView) convertView.findViewById(R.id.download_icon);
+            ProgressBar bar = (ProgressBar) convertView.findViewById(R.id.download_progress_bar);
+            TextView titleView = (TextView) convertView.findViewById(R.id.download_title);
+            TextView subtxtView = (TextView) convertView.findViewById(R.id.download_subtext);
+            TextView bytesView = (TextView) convertView.findViewById(R.id.download_bytes_text);
+            TextView pctView = (TextView) convertView.findViewById(R.id.download_pct_text);
+
+            DlState state = dlList.get(position);
+
+            if (state.isRomDownload()) {
+                titleView.setText(state.getRomInfo().romName);
                 icon.setImageResource(R.drawable.zip);
-            } else if (fileName.contains("/kernel/")) {
+            } else if (state.isKernelDownload()) {
+                titleView.setText(state.getKernelInfo().kernelName);
                 icon.setImageResource(R.drawable.zip);
             } else {
                 icon.setImageResource(R.drawable.zip);
             }
 
-            switch (status) {
-            case DownloadManager.STATUS_RUNNING:
-                bar.setIndeterminate(false);
-                bar.setVisibility(View.VISIBLE);
-                bytesView.setVisibility(View.VISIBLE);
-                pctView.setVisibility(View.VISIBLE);
-                subtxtView.setVisibility(View.GONE);
-                updateProgressViews(ctx, bytesView, pctView, bar, downBytes, totalBytes);
-                break;
-            case DownloadManager.STATUS_PAUSED:
-                bar.setIndeterminate(false);
-                bar.setVisibility((System.currentTimeMillis() / 1000) % 2 == 0 ? View.VISIBLE : View.INVISIBLE);
-                bytesView.setVisibility(View.VISIBLE);
-                pctView.setVisibility(View.VISIBLE);
-                updateProgressViews(ctx, bytesView, pctView, bar, downBytes, totalBytes);
+            int status = state.getStatus();
+            if (status == DlState.STATUS_RUNNING) {
+                bytesView.setText(state.getProgressStr(Downloads.this));
 
-                int pauseReason = R.string.downloads_paused_unknown;
-                switch (reason) {
-                case DownloadManager.PAUSED_QUEUED_FOR_WIFI:
-                    pauseReason = R.string.downloads_paused_wifi;
+                if (state.getTotalSize() == 0) {
+                    pctView.setVisibility(View.GONE);
+                    bar.setIndeterminate(true);
+                } else {
+                    pctView.setText(getString(R.string.downloads_pct_progress, Math.round(100.0f * (float) state.getPctDone())));
+                    bytesView.setVisibility(View.VISIBLE);
+                    bar.setMax(state.getTotalSize());
+                    bar.setProgress(state.getTotalDone());
+                    bar.setIndeterminate(false);
+                }
+                bytesView.setVisibility(View.VISIBLE);
+                bar.setVisibility(View.VISIBLE);
+                subtxtView.setVisibility(View.GONE);
+            } else {
+                if (status == DlState.STATUS_QUEUED || status == DlState.STATUS_STARTING) {
+                    bar.setIndeterminate(true);
+                    bar.setVisibility(View.VISIBLE);
+                } else if (status == DlState.STATUS_PAUSED_USER) {
+                    bar.setIndeterminate(false);
+                    bar.setMax(state.getTotalSize());
+                    bar.setProgress(state.getTotalDone());
+                    bar.setVisibility(View.VISIBLE);
+                } else {
+                    bar.setVisibility(View.GONE);
+                }
+                bytesView.setVisibility(View.GONE);
+                pctView.setVisibility(View.GONE);
+
+                int subtext = 0;
+                switch (status) {
+                case DlState.STATUS_QUEUED:
+                case DlState.STATUS_STARTING:
+                    subtext = R.string.downloads_queued;
                     break;
-                case DownloadManager.PAUSED_WAITING_FOR_NETWORK:
-                    pauseReason = R.string.downloads_paused_network;
+                case DlState.STATUS_FAILED:
+                    subtext = R.string.downloads_failed_unknown;
+                    //TODO failed explanation
                     break;
-                case DownloadManager.PAUSED_WAITING_TO_RETRY:
-                    pauseReason = R.string.downloads_paused_retry;
+                case DlState.STATUS_PAUSED_FOR_DATA:
+                    subtext = R.string.downloads_paused_network;
+                    break;
+                case DlState.STATUS_PAUSED_FOR_WIFI:
+                    subtext = R.string.downloads_paused_wifi;
+                    break;
+                case DlState.STATUS_PAUSED_RETRY:
+                case DlState.STATUS_PAUSED_SYSTEM:
+                    subtext = R.string.downloads_paused_retry;
+                    break;
+                case DlState.STATUS_COMPLETED:
+                    subtext = R.string.notif_completed;
+                    break;
+                case DlState.STATUS_PAUSED_USER:
+                    subtext = R.string.downloads_paused;
+                    break;
+                case DlState.STATUS_CANCELLED_USER:
+                    subtext = R.string.downloads_cancelled;
                     break;
                 }
-                subtxtView.setText(pauseReason);
+                subtxtView.setText(subtext);
                 subtxtView.setVisibility(View.VISIBLE);
-
-                break;
-            case DownloadManager.STATUS_SUCCESSFUL:
-                bar.setVisibility(View.GONE);
-                bytesView.setVisibility(View.GONE);
-                pctView.setVisibility(View.GONE);
-                subtxtView.setVisibility(View.GONE);
-                break;
-            case DownloadManager.STATUS_FAILED:
-                bar.setVisibility(View.GONE);
-                bytesView.setVisibility(View.GONE);
-                pctView.setVisibility(View.GONE);
-
-                int failReason = R.string.downloads_failed_unknown;
-                switch (reason) {
-                case DownloadManager.ERROR_CANNOT_RESUME:
-                    failReason = R.string.downloads_failed_resume;
-                    break;
-                case DownloadManager.ERROR_DEVICE_NOT_FOUND:
-                    failReason = R.string.downloads_failed_mount;
-                    break;
-                case DownloadManager.ERROR_FILE_ALREADY_EXISTS:
-                    failReason = R.string.downloads_failed_fileexists;
-                    break;
-                case DownloadManager.ERROR_HTTP_DATA_ERROR:
-                case DownloadManager.ERROR_TOO_MANY_REDIRECTS:
-                case DownloadManager.ERROR_UNHANDLED_HTTP_CODE:
-                    failReason = R.string.downloads_failed_http;
-                    break;
-                case DownloadManager.ERROR_INSUFFICIENT_SPACE:
-                    failReason = R.string.downloads_failed_space;
-                    break;
-                }
-                subtxtView.setText(failReason);
-                subtxtView.setVisibility(View.VISIBLE);
-
-                break;
-            case DownloadManager.STATUS_PENDING:
-                bar.setIndeterminate(true);
-                bar.setVisibility(View.VISIBLE);
-                bytesView.setVisibility(View.GONE);
-                pctView.setVisibility(View.GONE);
-                subtxtView.setVisibility(View.GONE);
-                break;
-            }
-        }
-
-        private void updateProgressViews(Context ctx, TextView bytesView, TextView pctView, ProgressBar bar, int done, int total) {
-            int scaledDone = done;
-            int scaledTotal = total;
-            int bytesTxtRes = R.string.downloads_size_progress_b;
-            if (total >= GBYTE_THRESH) {
-                scaledDone /= SCALE_GBYTES;
-                scaledTotal /= SCALE_GBYTES;
-                bytesTxtRes = R.string.downloads_size_progress_gb;
-            } else if (total >= MBYTE_THRESH) {
-                scaledDone /= SCALE_MBYTES;
-                scaledTotal /= SCALE_MBYTES;
-                bytesTxtRes = R.string.downloads_size_progress_mb;
-            } else if (total >= KBYTE_THRESH) {
-                scaledDone /= SCALE_KBYTES;
-                scaledTotal /= SCALE_KBYTES;
-                bytesTxtRes = R.string.downloads_size_progress_kb;
             }
 
-            bytesView.setText(ctx.getString(bytesTxtRes, scaledDone, scaledTotal));
-            pctView.setText(ctx.getString(R.string.downloads_pct_progress, Math.round(100 * ((float) done) / total)));
-            bar.setMax(total);
-            bar.setProgress(done);
-        }
-
-        @Override
-        public View newView(Context ctx, Cursor c, ViewGroup parent) {
-            LayoutInflater inflater = LayoutInflater.from(ctx);
-            View view = inflater.inflate(R.layout.download_item, parent, false);
-            bindView(view, ctx, c);
-            return view;
+            return convertView;
         }
     }
 }

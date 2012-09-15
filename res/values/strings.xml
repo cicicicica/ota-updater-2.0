@@ -28,7 +28,14 @@
     <string name="notif_text_kernel">OTA Kernel Update Available</string>
     <string name="notif_source">OTA Updater</string>
     <string name="notif_downloading">OTA Update Downloading</string>
+    <string name="notif_downloading_rom">ROM Update (version %1$s)</string>
+    <string name="notif_downloading_kernel">Kernel Update (version %1$s)</string>
     <string name="notif_download">Download</string>
+    <string name="notif_completed">Download finished. Tap to flash update.</string>
+    <string name="notif_retry">Retry</string>
+    <string name="notif_cancel">Cancel</string>
+    <string name="notif_pause">Pause</string>
+    <string name="notif_flash">Flash</string>
 
     <string name="alert_nodata_title">No Data Connection!</string>
     <string name="alert_nodata_message">You have no data connection\nPlease turn on Wi-Fi or Mobile Data in order to check for and download OTA updates.</string>
@@ -93,7 +100,7 @@
     <string name="about_feedback_title">Feedback</string>
     <string name="about_uptodate">Keep Up-to-Date!</string>
     <string name="about_follow_title">Follow us on Google+</string>
-	
+    
     <string name="main_walls">Wallpapers</string>
     <string name="main_res_walls">Wallpaper Resolution</string>
     <string name="main_device">Device</string>
@@ -142,18 +149,23 @@
     <string name="stats_preview_country_title">Country</string>
     <string name="stats_preview_carrier_title">Carrier</string>
 
-    <string name="downloads_recent_title">Recent Downloads</string>
-    <string name="downloads_pending_title">Pending Downloads</string>
     <string name="downloads_alt_zip">Zip</string>
     <string name="downloads_size_progress_b">%1$d / %2$d bytes</string>
     <string name="downloads_size_progress_kb">%1$d / %2$d KB</string>
     <string name="downloads_size_progress_mb">%1$d / %2$d MB</string>
     <string name="downloads_size_progress_gb">%1$d / %2$d GB</string>
-    <string name="downloads_pct_progress">%1$d%</string>
+    <string name="downloads_size_progress_unknown_b">%1$d bytes</string>
+    <string name="downloads_size_progress_unknown_kb">%1$d KB</string>
+    <string name="downloads_size_progress_unknown_mb">%1$d MB</string>
+    <string name="downloads_size_progress_unknown_gb">%1$d GB</string>
+    <string name="downloads_pct_progress">%1$f</string>
+    <string name="downloads_queued">Waiting to Start&#8230;</string>
     <string name="downloads_paused_wifi">Waiting for Wi-Fi&#8230;</string>
     <string name="downloads_paused_network">Waiting for Data connection&#8230;</string>
     <string name="downloads_paused_retry">Waiting to retry download&#8230;</string>
     <string name="downloads_paused_unknown">Waiting for download to proceed&#8230;</string>
+    <string name="downloads_paused">Paused</string>
+    <string name="downloads_cancelled">Cancelled</string>
     <string name="downloads_failed_http">Download failed: HTTP Error</string>
     <string name="downloads_failed_mount">Download failed: SD Card not mounted</string>
     <string name="downloads_failed_space">Download failed: Not enough space</string>
@@ -161,6 +173,7 @@
     <string name="downloads_failed_fileexists">Download failed: file already exists</string>
     <string name="downloads_failed_resume">Download failed: cannot resume download</string>
     <string name="downloads_none">No Downloads Found</string>
+    <string name="downloads_noservice">Not connected to service &#8230;</string>
 
     <string name="license_title">License</string>
     <string name="license_apache_title">Apache License</string>

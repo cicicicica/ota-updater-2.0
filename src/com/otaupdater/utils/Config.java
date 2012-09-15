@@ -48,6 +48,12 @@ public class Config {
 
     public static final int ROM_NOTIF_ID = 1;
     public static final int KERNEL_NOTIF_ID = 2;
+    public static final int DL_STATUS_NOTIF_ID = 3;
+
+    public static final int DL_MAX_RETRIES = 5;
+    public static final int DL_MAX_REDIRECTS = 5;
+    public static final int DL_RETRY_MAX = 86400; //60*60*24
+    public static final int DL_RETRY_MIN = 30;
 
     public static final int WAKE_TIMEOUT = 30000;
 

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    
+    <TextView
+        android:id="@+id/download_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:text="@string/notif_downloading"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end" />
+    
+    <TextView
+        android:id="@+id/download_subtext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/download_title"
+        android:singleLine="true"
+        android:ellipsize="end" />
+    
+    <TextView
+        android:id="@+id/download_statustext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/download_title"
+        android:visibility="gone"
+        android:singleLine="true"
+        android:ellipsize="end" />
+    
+    <TextView 
+        android:id="@+id/download_bytes_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/download_subtext"
+        android:singleLine="true" />
+    
+    <TextView
+        android:id="@+id/download_pct_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_toRightOf="@id/download_bytes_text"
+        android:layout_below="@id/download_title"
+        android:singleLine="true" />
+    
+    <ProgressBar
+        android:id="@+id/download_progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/download_bytes_text"
+        android:indeterminate="true"
+        style="@android:style/Widget.ProgressBar.Horizontal" />
+
+</RelativeLayout>

@@ -61,6 +61,8 @@
         </receiver>
 
         <service android:name=".GCMIntentService" />
+        
+        <service android:name=".DownloadService" />
 
         <receiver android:name=".UpdateCheckReceiver">
             <intent-filter>
