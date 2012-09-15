@@ -16,10 +16,6 @@
 
 package com.otaupdater.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -33,23 +29,27 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
-import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
+import android.content.ServiceConnection;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.otaupdater.DownloadReceiver;
+import com.otaupdater.DownloadService;
+import com.otaupdater.DownloadService.BindUtil;
+import com.otaupdater.DownloadService.BindUtil.Token;
+import com.otaupdater.IDownloadService;
 import com.otaupdater.R;
 import com.otaupdater.TabDisplay;
 
@@ -153,24 +153,60 @@ public class RomInfo implements Parcelable {
         nm.cancel(Config.ROM_NOTIF_ID);
     }
 
-    @TargetApi(11)
-    public long fetchFile(Context ctx) {
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-        request.setTitle(ctx.getString(R.string.notif_downloading));
-        request.setDescription(romName);
-        request.setVisibleInDownloadsUi(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        }
+    public void downloadFileSilent(Context ctx) {
+        Intent i = new Intent(ctx, DownloadService.class);
+        i.setAction(DownloadService.SERVICE_ACTION);
+        i.putExtra(DownloadService.EXTRA_CMD, DownloadService.CMD_DOWNLOAD);
+        i.putExtra(DownloadService.EXTRA_INFO_TYPE, DownloadService.EXTRA_INFO_TYPE_ROM);
+        this.addToIntent(i);
+        ctx.startService(i);
+    }
 
-        request.setDestinationUri(Uri.fromFile(new File(Config.ROM_DL_PATH_FILE, getDownloadFileName())));
+    public void downloadFileDialog(final Context ctx) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(R.string.alert_downloading);
+        builder.setMessage(ctx.getString(R.string.alert_downloading_changelog, changelog));
+        builder.setCancelable(true);
+        builder.setPositiveButton(R.string.alert_hide, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
 
-        int netTypes = DownloadManager.Request.NETWORK_WIFI;
-        if (!Config.getInstance(ctx).getWifiOnlyDl()) netTypes |= DownloadManager.Request.NETWORK_MOBILE;
-        request.setAllowedNetworkTypes(netTypes);
+        final AlertDialog dlg = builder.create();
 
-        DownloadManager manager = (DownloadManager) ctx.getSystemService(Context.DOWNLOAD_SERVICE);
-        return manager.enqueue(request);
+        final Token token = BindUtil.bindToService(ctx, new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder stub) {
+                final IDownloadService service = IDownloadService.Stub.asInterface(stub);
+                try {
+                    final int dlID = service.queueRomDownload(RomInfo.this);
+                    dlg.setButton(DialogInterface.BUTTON_NEGATIVE, ctx.getString(android.R.string.cancel),
+                            new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            try {
+                                service.cancel(dlID);
+                            } catch (RemoteException e) { }
+                        }
+                    });
+                } catch (RemoteException e) { }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                if (dlg.isShowing()) dlg.dismiss();
+            }
+        });
+
+        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                BindUtil.unbindFromService(token);
+            }
+        });
     }
 
     public String getDownloadFileName() {
@@ -186,60 +222,37 @@ public class RomInfo implements Parcelable {
             @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 dialog.dismiss();
+                downloadFileDialog(ctx);
+            }
+        });
 
-                final File file = new File(Config.ROM_DL_PATH_FILE, getDownloadFileName());
-                if (file.exists()) {
-                    Log.v("OTA::Download", "Found old zip, checking md5");
-
-                    InputStream is = null;
-                    try {
-                        is = new FileInputStream(file);
-                        MessageDigest digest = MessageDigest.getInstance("MD5");
-                        byte[] data = new byte[4096];
-                        int nRead = -1;
-                        while ((nRead = is.read(data)) != -1) {
-                            digest.update(data, 0, nRead);
-                        }
-                        String oldMd5 = Utils.byteArrToStr(digest.digest());
-                        Log.v("OTA::Download", "old zip md5: " + oldMd5);
-                        if (!md5.equalsIgnoreCase(oldMd5)) {
-                            file.delete();
-                        } else {
-                            //TODO show flash dialog
-                            return;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        file.delete();
-                    } finally {
-                        if (is != null) {
-                            try { is.close(); }
-                            catch (Exception e) { }
-                        }
-                    }
+        if (changelog.length() != 0) {
+            alert.setNeutralButton(R.string.alert_changelog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    showChangelogDialog(ctx);
                 }
+            });
+        }
 
-                final long dlID = fetchFile(ctx);
+        alert.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        alert.show();
+    }
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-                builder.setTitle(R.string.alert_downloading);
-                builder.setMessage(ctx.getString(R.string.alert_downloading_changelog, changelog));
-                builder.setCancelable(true);
-                builder.setPositiveButton(R.string.alert_hide, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-                builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
+    public void showChangelogDialog(final Context ctx) {
+        AlertDialog.Builder alert = new AlertDialog.Builder(ctx);
 
-                        DownloadManager dm = (DownloadManager) ctx.getSystemService(Context.DOWNLOAD_SERVICE);
-                        dm.remove(dlID);
-                    }
-                });
+        alert.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int whichButton) {
+                dialog.dismiss();
+                downloadFileDialog(ctx);
             }
         });
 
@@ -249,7 +262,7 @@ public class RomInfo implements Parcelable {
                 dialog.dismiss();
             }
         });
-        alert.create().show();
+        alert.show();
     }
 
     public static void fetchInfo(Context ctx) {

@@ -47,6 +47,13 @@ import com.otaupdater.utils.RomInfo;
 public class DownloadService extends Service implements DownloadListener {
     public static final String SERVICE_ACTION = "com.otaupdater.downloadservice.command";
 
+    public static final String EXTRA_CMD = "service_cmd";
+    public static final int CMD_DOWNLOAD = 1;
+
+    public static final String EXTRA_INFO_TYPE = "info_type";
+    public static final int EXTRA_INFO_TYPE_ROM = 1;
+    public static final int EXTRA_INFO_TYPE_KERNEL = 2;
+
     public static final int STOP_NO_DATA = 1;
     public static final int STOP_NO_WIFI = 2;
 
@@ -88,10 +95,23 @@ public class DownloadService extends Service implements DownloadListener {
                     tryStartQueue();
                 }
             } else if (SERVICE_ACTION.equals(action)) {
-                int cmd = intent.getIntExtra("servicecmd", -1);
+                int cmd = intent.getIntExtra(EXTRA_CMD, -1);
                 if (cmd == -1) return;
                 switch (cmd) {
+                case CMD_DOWNLOAD:
+                    int type = intent.getIntExtra(EXTRA_INFO_TYPE, -1);
+                    if (type == -1) return;
 
+                    switch (type) {
+                    case 1:
+                        queueDownload(RomInfo.fromIntent(intent));
+                        break;
+                    case 2:
+                        queueDownload(KernelInfo.fromIntent(intent));
+                        break;
+                    }
+
+                    break;
                 }
             }
         }
