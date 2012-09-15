@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -578,15 +577,12 @@ public class DownloadService extends Service implements DownloadListener {
         protected static IDownloadService service = null;
         private static HashMap<Context, ServiceBinder> connections = new HashMap<Context, ServiceBinder>();
 
-        public static Token bindToService(Activity act) {
-            return bindToService(act, null);
+        public static Token bindToService(Context ctx) {
+            return bindToService(ctx, null);
         }
 
-        public static Token bindToService(Activity act, ServiceConnection callback) {
-            Activity realAct = act.getParent();
-            if (realAct == null) realAct = act;
-
-            ContextWrapper wrapper = new ContextWrapper(realAct);
+        public static Token bindToService(Context ctx, ServiceConnection callback) {
+            ContextWrapper wrapper = new ContextWrapper(ctx.getApplicationContext());
             wrapper.startService(new Intent(wrapper, DownloadService.class));
             ServiceBinder sb = new ServiceBinder(callback);
             if (wrapper.bindService((new Intent()).setClass(wrapper, DownloadService.class), sb, 0)) {
