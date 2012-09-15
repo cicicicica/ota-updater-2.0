@@ -1,0 +1,5 @@
+{
+    otaid: "<OTA Updater ID>",
+    otaver: "<OTA Version>",
+    otatime: "<OTA Date/Time - yyyymmdd-hhmm>"
+}
