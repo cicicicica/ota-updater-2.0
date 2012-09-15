@@ -17,27 +17,33 @@
 package com.otaupdater;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
-import android.annotation.TargetApi;
 import android.os.Bundle;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceScreen;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.SherlockListFragment;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.KernelInfo.KernelInfoListener;
 import com.otaupdater.utils.Utils;
 
-@TargetApi(11)
-public class KernelTab extends PreferenceFragment {
+public class KernelTab extends SherlockListFragment {
+
+    private final ArrayList<HashMap<String, Object>> DATA = new ArrayList<HashMap<String, Object>>();
+    private /*final*/ int AVAIL_UPDATES_IDX = -1;
+    private /*final*/ SimpleAdapter adapter;
 
     private Config cfg;
     private boolean fetching = false;
-    private Preference availUpdatePref;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,9 +51,21 @@ public class KernelTab extends PreferenceFragment {
 
         cfg = Config.getInstance(getActivity().getApplicationContext());
 
-        if (Utils.isKernelOtaEnabled()) {
-            addPreferencesFromResource(R.xml.kernel);
+        HashMap<String, Object> item;
 
+        item = new HashMap<String, Object>();
+        item.put("title", getString(R.string.main_device));
+        item.put("summary", android.os.Build.DEVICE.toLowerCase());
+        item.put("icon", R.drawable.device);
+        DATA.add(item);
+
+        item = new HashMap<String, Object>();
+        item.put("title", getString(R.string.main_rom));
+        item.put("summary", Utils.getKernelVersion());
+        item.put("icon", R.drawable.hammer);
+        DATA.add(item);
+
+        if (Utils.isKernelOtaEnabled()) {
             String kernelVersion = Utils.getKernelOtaVersion();
             if (kernelVersion == null) kernelVersion = getString(R.string.kernel_version_unknown);
             Date kernelDate = Utils.getKernelOtaDate();
@@ -55,40 +73,64 @@ public class KernelTab extends PreferenceFragment {
                 kernelVersion += " (" + DateFormat.getDateTimeInstance().format(kernelDate) + ")";
             }
 
-            final Preference device = findPreference("device_view");
-            device.setSummary(android.os.Build.DEVICE.toLowerCase());
-            final Preference kernel = findPreference("kernel_view");
-            kernel.setSummary(Utils.getKernelVersion());
-            final Preference version = findPreference("version_view");
-            version.setSummary(kernelVersion);
-            final Preference build = findPreference("otaid_view");
-            build.setSummary(Utils.getKernelOtaID());
+            item = new HashMap<String, Object>();
+            item.put("title", getString(R.string.rom_version));
+            item.put("summary", kernelVersion);
+            item.put("icon", R.drawable.version);
+            DATA.add(item);
 
-            availUpdatePref = findPreference("avail_updates");
+            item = new HashMap<String, Object>();
+            item.put("title", getString(R.string.main_otaid));
+            item.put("summary", Utils.getKernelOtaID());
+            item.put("icon", R.drawable.key);
+            DATA.add(item);
+
+            item = new HashMap<String, Object>();
+            item.put("title", getString(R.string.updates_avail_title));
             if (cfg.hasStoredKernelUpdate()) {
                 KernelInfo info = cfg.getStoredKernelUpdate();
                 if (Utils.isKernelUpdate(info)) {
-                    availUpdatePref.setSummary(getString(R.string.updates_new, info.kernelName, info.version));
+                    item.put("summary", getString(R.string.updates_new, info.kernelName, info.version));
                 } else {
-                    availUpdatePref.setSummary(R.string.updates_none);
+                    item.put("summary", getString(R.string.updates_none));
                     cfg.clearStoredKernelUpdate();
                 }
+            } else {
+                item.put("summary", getString(R.string.updates_none));
             }
+            item.put("icon", R.drawable.cloud);
+            AVAIL_UPDATES_IDX = DATA.size();
+            DATA.add(item);
         } else {
             if (cfg.hasStoredKernelUpdate()) cfg.clearStoredKernelUpdate();
 
-            addPreferencesFromResource(R.xml.kernel_unsupported);
-
-            final Preference device = findPreference("device_view");
-            device.setSummary(android.os.Build.DEVICE.toLowerCase());
-            final Preference kernel = findPreference("kernel_view");
-            kernel.setSummary(Utils.getKernelVersion());
+            item = new HashMap<String, Object>();
+            item.put("title", getString(R.string.kernel_unsupported_title));
+            item.put("summary", getString(R.string.kernel_unsupported_summary));
+            item.put("icon", R.drawable.cloud);
+            DATA.add(item);
         }
     }
 
     @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-        if (preference == availUpdatePref) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.list, container, false);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        adapter = new SimpleAdapter(getActivity(),
+                DATA,
+                R.layout.two_line_icon_list_item,
+                new String[] { "title", "summary", "icon" },
+                new int[] { android.R.id.text1, android.R.id.text2, android.R.id.icon });
+        setListAdapter(adapter);
+    }
+
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        if (position == AVAIL_UPDATES_IDX) {
             if (!fetching) checkForKernelUpdates();
             else if (cfg.hasStoredKernelUpdate()) {
                 KernelInfo info = cfg.getStoredKernelUpdate();
@@ -96,14 +138,11 @@ public class KernelTab extends PreferenceFragment {
                     info.showUpdateDialog(getActivity());
                 } else {
                     cfg.clearStoredKernelUpdate();
-                    availUpdatePref.setSummary(R.string.updates_none);
+                    DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));
+                    adapter.notifyDataSetChanged();
                 }
             }
-        } else {
-            return super.onPreferenceTreeClick(preferenceScreen, preference);
         }
-
-        return true;
     }
 
     private void checkForKernelUpdates() {
@@ -113,17 +152,18 @@ public class KernelTab extends PreferenceFragment {
             @Override
             public void onStartLoading() {
                 fetching = true;
-                availUpdatePref.setSummary(R.string.updates_checking);
+                DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_checking));
+                adapter.notifyDataSetChanged();
             }
             @Override
             public void onLoaded(KernelInfo info) {
                 fetching = false;
                 if (info == null) {
-                    availUpdatePref.setSummary(getString(R.string.updates_error, "Unknown error"));
+                    DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_error, "Unknown error"));
                     Toast.makeText(getActivity(), R.string.toast_fetch_error, Toast.LENGTH_SHORT).show();
                 } else if (Utils.isKernelUpdate(info)) {
                     cfg.storeKernelUpdate(info);
-                    availUpdatePref.setSummary(getString(R.string.updates_new, info.kernelName, info.version));
+                    DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_new, info.kernelName, info.version));
                     if (cfg.getShowNotif()) {
                         info.showUpdateNotif(getActivity());
                     } else {
@@ -132,14 +172,16 @@ public class KernelTab extends PreferenceFragment {
                 } else {
                     cfg.clearStoredKernelUpdate();
                     KernelInfo.clearUpdateNotif(getActivity());
-                    availUpdatePref.setSummary(R.string.updates_none);
+                    DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));
                     Toast.makeText(getActivity(), R.string.toast_no_updates, Toast.LENGTH_SHORT).show();
                 }
+                adapter.notifyDataSetChanged();
             }
             @Override
             public void onError(String error) {
                 fetching = false;
-                availUpdatePref.setSummary(getString(R.string.updates_error, error));
+                DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_error, error));
+                adapter.notifyDataSetChanged();
                 Toast.makeText(getActivity(), error, Toast.LENGTH_SHORT).show();
             }
         });

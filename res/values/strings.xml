@@ -181,6 +181,8 @@
     <string name="license_obtain_title">Obtain a copy of the License</string>
 
     <string name="loading_dialog_title">Loading&#8230;</string>
+    
+    <string name="alt_icon">Icon</string>
 
     <string name="settings_title">OTA Updater Settings</string>
     <string name="settings_account_title">Add account</string>

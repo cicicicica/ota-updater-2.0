@@ -16,32 +16,31 @@
 
 package com.otaupdater;
 
-import android.annotation.TargetApi;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceScreen;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
 
+import com.actionbarsherlock.app.SherlockListFragment;
 import com.otaupdater.utils.Config;
 
-@TargetApi(11)
-public class AboutTab extends PreferenceFragment {
+public class AboutTab extends SherlockListFragment {
 
-    private Preference aboutOtaUpdater;
-    private Preference license;
-    private Preference contribPref;
-    private Preference feedbackPref;
-    private Preference followGPlus;
+    private final ArrayList<HashMap<String, String>> DATA = new ArrayList<HashMap<String,String>>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.about);
 
         PackageInfo pInfo = null;
         try {
@@ -52,40 +51,73 @@ public class AboutTab extends PreferenceFragment {
         }
         String version = pInfo == null ? getString(R.string.about_version_unknown) : pInfo.versionName;
 
-        Preference aboutAppVersion = findPreference("version_pref");
-        aboutAppVersion.setSummary(version);
+        HashMap<String, String> item;
 
-        aboutOtaUpdater = findPreference("about_pref");
-        license = findPreference("license_pref");
-        contribPref = findPreference("contrib_pref");
-        feedbackPref = findPreference("feedback_pref");
-        followGPlus = findPreference("follow_gplus_pref");
+        item = new HashMap<String, String>();
+        item.put("title", getString(R.string.about_ota_title));
+        item.put("summary", getString(R.string.about_ota_summary));
+        DATA.add(item);
+
+        item = new HashMap<String, String>();
+        item.put("title", getString(R.string.about_version_title));
+        item.put("summary", version);
+        DATA.add(item);
+
+        item = new HashMap<String, String>();
+        item.put("title", getString(R.string.about_license_title));
+        item.put("summary", "");
+        DATA.add(item);
+
+        item = new HashMap<String, String>();
+        item.put("title", getString(R.string.about_contrib_title));
+        item.put("summary", "");
+        DATA.add(item);
+
+        item = new HashMap<String, String>();
+        item.put("title", getString(R.string.about_feedback_title));
+        item.put("summary", "");
+        DATA.add(item);
+
+        item = new HashMap<String, String>();
+        item.put("title", getString(R.string.about_uptodate));
+        item.put("summary", getString(R.string.about_follow_title));
+        DATA.add(item);
     }
 
     @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-        if (preference == aboutOtaUpdater) {
-            Intent i = new Intent(Intent.ACTION_VIEW);
-            i.setData(Uri.parse(Config.WEB_HOME_URL));
-            startActivity(i);
-        } else if (preference == license) {
-            Intent i = new Intent(getActivity(), License.class);
-            startActivity(i);
-        } else if (preference == followGPlus) {
-            Intent i = new Intent(Intent.ACTION_VIEW);
-            i.setData(Uri.parse(Config.GPLUS_URL));
-            startActivity(i);
-        } else if (preference == contribPref) {
-            Intent i = new Intent(getActivity(), Contributors.class);
-            startActivity(i);
-        } else if (preference == feedbackPref) {
-            Intent i = new Intent(Intent.ACTION_VIEW);
-            i.setData(Uri.parse(Config.WEB_FEEDBACK_URL));
-            startActivity(i);
-        } else {
-            return super.onPreferenceTreeClick(preferenceScreen, preference);
-        }
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.list, container, false);
+    }
 
-        return true;
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        setListAdapter(new SimpleAdapter(getActivity(),
+                DATA,
+                android.R.layout.simple_list_item_2,
+                new String[] { "title", "summary" },
+                new int[] { android.R.id.text1, android.R.id.text2 }));
+    }
+
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        switch (position) {
+        case 0:
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.WEB_HOME_URL)));
+            break;
+        case 2:
+            startActivity(new Intent(getActivity(), License.class));
+            break;
+        case 3:
+            startActivity(new Intent(getActivity(), Contributors.class));
+            break;
+        case 4:
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.WEB_FEEDBACK_URL)));
+            break;
+        case 5:
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.GPLUS_URL)));
+            break;
+        }
     }
 }
