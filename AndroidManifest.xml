@@ -16,7 +16,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.otaupdater"
-    android:versionCode="1"
+    android:versionCode="20"
     android:versionName="1.90-alpha">
 
     <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="16" />
