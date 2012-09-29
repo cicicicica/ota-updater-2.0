@@ -77,7 +77,7 @@ public class KernelInfo implements Parcelable {
                 i.getStringExtra("kernel_info_changelog"),
                 i.getStringExtra("kernel_info_url"),
                 i.getStringExtra("kernel_info_md5"),
-                new Date(i.getLongExtra("kernel_info_date", System.currentTimeMillis())));
+                Utils.parseDate(i.getStringExtra("kernel_info_date")));
     }
 
     public void addToIntent(Intent i) {
@@ -86,7 +86,7 @@ public class KernelInfo implements Parcelable {
         i.putExtra("kernel_info_changelog", changelog);
         i.putExtra("kernel_info_url", url);
         i.putExtra("kernel_info_md5", md5);
-        i.putExtra("kernel_info_date", date.getTime());
+        i.putExtra("kernel_info_date", Utils.formatDate(date));
     }
 
     @Override
@@ -325,7 +325,7 @@ public class KernelInfo implements Parcelable {
                             json.getString("changelog"),
                             json.getString("url"),
                             json.getString("md5"),
-                            new Date(json.getLong("date")));
+                            Utils.parseDate(json.getString("date")));
                 } else {
                     if (e != null) e.consumeContent();
                     error = "Server responded with error " + status;
