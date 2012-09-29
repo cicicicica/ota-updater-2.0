@@ -325,22 +325,20 @@ public class Utils {
 
     public static boolean isRomUpdate(RomInfo info) {
         if (info == null) return false;
-        if (info.version != null) {
-            if (getRomOtaVersion() == null || !info.version.equalsIgnoreCase(getRomOtaVersion())) return true;
-        }
         if (info.date != null) {
             if (getRomOtaDate() == null || info.date.after(getRomOtaDate())) return true;
+        } else if (info.version != null) {
+            if (getRomOtaVersion() == null || !info.version.equalsIgnoreCase(getRomOtaVersion())) return true;
         }
         return false;
     }
 
     public static boolean isKernelUpdate(KernelInfo info) {
         if (info == null) return false;
-        if (info.version != null) {
-            if (getKernelOtaVersion() == null || !info.version.equalsIgnoreCase(getKernelOtaVersion())) return true;
-        }
         if (info.date != null) {
             if (getKernelOtaDate() == null || info.date.after(getKernelOtaDate())) return true;
+        } else if (info.version != null) {
+            if (getKernelOtaVersion() == null || !info.version.equalsIgnoreCase(getKernelOtaVersion())) return true;
         }
         return false;
     }
