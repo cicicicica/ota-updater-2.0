@@ -41,6 +41,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
@@ -355,6 +356,15 @@ public class Utils {
 
         if (Utils.isRomOtaEnabled()) params.add(new BasicNameValuePair("rom_id", Utils.getRomOtaID()));
         if (Utils.isKernelOtaEnabled()) params.add(new BasicNameValuePair("kernel_id", Utils.getKernelOtaID()));
+
+        PackageInfo pInfo = null;
+        try {
+            pInfo = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+        } catch (NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        int version = pInfo == null ? 20 : pInfo.versionCode;
+        params.add(new BasicNameValuePair("app_version", version + ""));
 
         try {
             HttpClient http = new DefaultHttpClient();
