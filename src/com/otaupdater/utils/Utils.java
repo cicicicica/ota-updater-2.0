@@ -397,7 +397,7 @@ public class Utils {
                     JSONObject jsonRom = json.getJSONObject("rom");
 
                     RomInfo info = new RomInfo(
-                            jsonRom.getString("rom"),
+                            jsonRom.getString("name"),
                             jsonRom.getString("version"),
                             jsonRom.getString("changelog"),
                             jsonRom.getString("url"),
@@ -421,7 +421,7 @@ public class Utils {
                     JSONObject jsonKernel = json.getJSONObject("rom");
 
                     KernelInfo info = new KernelInfo(
-                            jsonKernel.getString("rom"),
+                            jsonKernel.getString("name"),
                             jsonKernel.getString("version"),
                             jsonKernel.getString("changelog"),
                             jsonKernel.getString("url"),
