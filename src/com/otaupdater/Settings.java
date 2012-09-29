@@ -28,7 +28,6 @@ import android.preference.PreferenceScreen;
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockPreferenceActivity;
 import com.actionbarsherlock.view.MenuItem;
-import com.otaupdater.stats.AnonymousStats;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.Utils;
 
@@ -39,7 +38,6 @@ public class Settings extends SherlockPreferenceActivity {
     private CheckBoxPreference notifPref;
     private CheckBoxPreference wifidlPref;
     private Preference resetWarnPref;
-    private Preference statsPref;
     private Preference prokeyPref;
     private Preference donatePref;
 
@@ -82,7 +80,6 @@ public class Settings extends SherlockPreferenceActivity {
         }
 
         resetWarnPref = findPreference("resetwarn_pref");
-        statsPref = findPreference("stats_pref");
         donatePref = findPreference("donate_pref");
     }
 
@@ -106,9 +103,6 @@ public class Settings extends SherlockPreferenceActivity {
         } else if (preference == resetWarnPref) {
             cfg.setIgnoredDataWarn(false);
             cfg.setIgnoredUnsupportedWarn(false);
-        } else if (preference == statsPref) {
-            Intent i = new Intent(this, AnonymousStats.class);
-            startActivity(i);
         } else if (preference == prokeyPref) {
             if (Utils.haveProKey(getApplicationContext())) {
                 if (cfg.hasValidProKey()) {
