@@ -211,7 +211,8 @@ public class Config {
             SharedPreferences.Editor editor = PREFS.edit();
             editor.putInt("version", curVersion);
             editor.putString("device", curDevice);
-            editor.putString("romid", curRomID);
+            editor.putString("rom_id", curRomID);
+            editor.putString("kernel_id", curKernelID);
             editor.commit();
         }
     }
