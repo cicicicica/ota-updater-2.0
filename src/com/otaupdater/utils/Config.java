@@ -26,16 +26,16 @@ import android.content.pm.PackageManager.NameNotFoundException;
 public class Config {
     public static final String LOG_TAG = "OTA::";
 
-    public static final String WEB_HOME_URL = "https://www.otaupdatecenter.pro/";
+    public static final String WEB_HOME_URL = "http://www.otaupdatecenter.pro/test/";
     public static final String WEB_FEEDBACK_URL = WEB_HOME_URL + "?page=feedback";
     public static final String GPLUS_URL = "https://plus.google.com/102074511541445644953/posts";
     public static final String PP_DONATE_URL = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5UAZTL2YQ57ZS";
 
     public static final String GCM_SENDER_ID = "1068482628480";
-    public static final String GCM_REGISTER_URL = WEB_HOME_URL + "pages/regdevice2.php";
+    public static final String GCM_REGISTER_URL = WEB_HOME_URL + "pages/regdevice.php";
 
-    public static final String ROM_PULL_URL = WEB_HOME_URL + "pages/rominfo.php";
-    public static final String KERNEL_PULL_URL = WEB_HOME_URL + "pages/kernelinfo.php";
+    public static final String ROM_PULL_URL = WEB_HOME_URL + "pages/rom_info.php";
+    public static final String KERNEL_PULL_URL = WEB_HOME_URL + "pages/kernel_info.php";
 
     public static final String OTA_SD_PATH_OS_PROP = "otaupdater.sdcard.os";
     public static final String OTA_SD_PATH_RECOVERY_PROP = "otaupdater.sdcard.recovery";
