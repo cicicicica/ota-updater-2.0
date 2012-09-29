@@ -320,7 +320,7 @@ public class RomInfo implements Parcelable {
                     }
 
                     return new RomInfo(
-                            json.getString("rom"),
+                            json.getString("name"),
                             json.getString("version"),
                             json.getString("changelog"),
                             json.getString("url"),

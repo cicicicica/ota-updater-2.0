@@ -320,7 +320,7 @@ public class KernelInfo implements Parcelable {
                     }
 
                     return new KernelInfo(
-                            json.getString("kernel"),
+                            json.getString("name"),
                             json.getString("version"),
                             json.getString("changelog"),
                             json.getString("url"),
