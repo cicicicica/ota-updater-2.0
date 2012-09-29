@@ -25,7 +25,9 @@
     <string name="app_settings">Settings</string>
 
     <string name="notif_text_rom">OTA ROM Update Available</string>
+    <string name="notif_text_rom_detailed">An OTA ROM update is available\n\nChangelog:\n%1$s</string>
     <string name="notif_text_kernel">OTA Kernel Update Available</string>
+    <string name="notif_text_kernel_detailed">An OTA Kernel update is available\n\nChangelog:\n%1$s</string>
     <string name="notif_source">OTA Updater</string>
     <string name="notif_downloading">OTA Update Downloading</string>
     <string name="notif_downloading_rom">ROM Update (version %1$s)</string>

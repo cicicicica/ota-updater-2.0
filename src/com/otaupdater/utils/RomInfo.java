@@ -140,7 +140,7 @@ public class RomInfo implements Parcelable {
         builder.setTicker(ctx.getString(R.string.notif_text_rom));
         builder.setWhen(System.currentTimeMillis());
         builder.setSmallIcon(R.drawable.updates);
-        builder.setStyle(new NotificationCompat.BigTextStyle().bigText(changelog));
+        builder.setStyle(new NotificationCompat.BigTextStyle().bigText(ctx.getString(R.string.notif_text_rom_detailed, changelog)));
         builder.setPriority(NotificationCompat.PRIORITY_LOW);
         builder.addAction(R.drawable.ic_download_default, ctx.getString(R.string.notif_download), dlPIntent);
 
