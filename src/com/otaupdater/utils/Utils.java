@@ -331,9 +331,11 @@ public class Utils {
     public static boolean isRomUpdate(RomInfo info) {
         if (info == null) return false;
         if (info.date != null) {
-            if (getRomOtaDate() == null || info.date.after(getRomOtaDate())) return true;
+            if (getRomOtaDate() == null) return true;
+            if (info.date.after(getRomOtaDate())) return true;
         } else if (info.version != null) {
-            if (getRomOtaVersion() == null || !info.version.equalsIgnoreCase(getRomOtaVersion())) return true;
+            if (getRomOtaVersion() == null) return true;
+            if (!info.version.equalsIgnoreCase(getRomOtaVersion())) return true;
         }
         return false;
     }
@@ -341,9 +343,11 @@ public class Utils {
     public static boolean isKernelUpdate(KernelInfo info) {
         if (info == null) return false;
         if (info.date != null) {
-            if (getKernelOtaDate() == null || info.date.after(getKernelOtaDate())) return true;
+            if (getKernelOtaDate() == null) return true;
+            if (info.date.after(getKernelOtaDate())) return true;
         } else if (info.version != null) {
-            if (getKernelOtaVersion() == null || !info.version.equalsIgnoreCase(getKernelOtaVersion())) return true;
+            if (getKernelOtaVersion() == null) return true;
+            if (!info.version.equalsIgnoreCase(getKernelOtaVersion())) return true;
         }
         return false;
     }
