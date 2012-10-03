@@ -42,9 +42,6 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
 
         if (cfg.hasStoredRomUpdate()) {
             if (Utils.isRomOtaEnabled()) {
-                Log.v(Config.LOG_TAG + "Receiver", "Found stored rom update, not OTA-rom");
-                cfg.clearStoredRomUpdate();
-            } else {
                 RomInfo info = cfg.getStoredRomUpdate();
                 if (Utils.isRomUpdate(info)) {
                     if (cfg.getShowNotif()) {
@@ -58,6 +55,9 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
                     cfg.clearStoredRomUpdate();
                     RomInfo.clearUpdateNotif(context);
                 }
+            } else {
+                Log.v(Config.LOG_TAG + "Receiver", "Found stored rom update, not OTA-rom");
+                cfg.clearStoredRomUpdate();
             }
         } else {
             Log.v(Config.LOG_TAG + "Receiver", "No stored rom update");
@@ -65,9 +65,6 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
 
         if (cfg.hasStoredKernelUpdate()) {
             if (Utils.isKernelOtaEnabled()) {
-                Log.v(Config.LOG_TAG + "Receiver", "Found stored kernel update, not OTA-kernel");
-                cfg.clearStoredKernelUpdate();
-            } else {
                 KernelInfo info = cfg.getStoredKernelUpdate();
                 if (Utils.isKernelUpdate(info)) {
                     if (cfg.getShowNotif()) {
@@ -81,6 +78,9 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
                     cfg.clearStoredKernelUpdate();
                     KernelInfo.clearUpdateNotif(context);
                 }
+            } else {
+                Log.v(Config.LOG_TAG + "Receiver", "Found stored kernel update, not OTA-kernel");
+                cfg.clearStoredKernelUpdate();
             }
         } else {
             Log.v(Config.LOG_TAG + "Receiver", "No stored kernel update");
