@@ -37,6 +37,7 @@
     <string name="notif_retry">Retry</string>
     <string name="notif_cancel">Cancel</string>
     <string name="notif_pause">Pause</string>
+    <string name="notif_resume">Resume</string>
     <string name="notif_flash">Flash</string>
 
     <string name="alert_nodata_title">No Data Connection!</string>
@@ -162,7 +163,7 @@
     <string name="downloads_size_progress_unknown_kb">%1$d KB</string>
     <string name="downloads_size_progress_unknown_mb">%1$d MB</string>
     <string name="downloads_size_progress_unknown_gb">%1$d GB</string>
-    <string name="downloads_pct_progress">%1$f</string>
+    <string name="downloads_pct_progress">%1$d%%</string>
     <string name="downloads_queued">Waiting to Start&#8230;</string>
     <string name="downloads_paused_wifi">Waiting for Wi-Fi&#8230;</string>
     <string name="downloads_paused_network">Waiting for Data connection&#8230;</string>

@@ -16,6 +16,7 @@
 
 package com.otaupdater.utils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -53,7 +54,9 @@ import com.otaupdater.IDownloadService;
 import com.otaupdater.R;
 import com.otaupdater.TabDisplay;
 
-public class RomInfo implements Parcelable {
+public class RomInfo implements Parcelable, Serializable {
+    private static final long serialVersionUID = 7138464743643950748L;
+
     public String romName;
     public String version;
     public String changelog;

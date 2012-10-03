@@ -16,6 +16,7 @@
 
 package com.otaupdater.utils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -53,7 +54,9 @@ import com.otaupdater.IDownloadService;
 import com.otaupdater.R;
 import com.otaupdater.TabDisplay;
 
-public class KernelInfo implements Parcelable {
+public class KernelInfo implements Parcelable, Serializable {
+    private static final long serialVersionUID = 2744694293064819593L;
+
     public String kernelName;
     public String version;
     public String changelog;

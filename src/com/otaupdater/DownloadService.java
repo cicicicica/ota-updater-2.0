@@ -12,7 +12,6 @@ import java.util.List;
 
 import android.annotation.TargetApi;
 import android.app.DownloadManager;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -31,10 +30,9 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.View;
-import android.widget.RemoteViews;
 
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DlState;
@@ -49,6 +47,12 @@ public class DownloadService extends Service implements DownloadListener {
 
     public static final String EXTRA_CMD = "service_cmd";
     public static final int CMD_DOWNLOAD = 1;
+    public static final int CMD_PAUSE = 2;
+    public static final int CMD_RESUME = 3;
+    public static final int CMD_CANCEL = 4;
+    public static final int CMD_RETRY = 5;
+
+    public static final String EXTRAL_DOWNLOAD_ID = "download_id";
 
     public static final String EXTRA_INFO_TYPE = "info_type";
     public static final int EXTRA_INFO_TYPE_ROM = 1;
@@ -72,7 +76,6 @@ public class DownloadService extends Service implements DownloadListener {
     private Config cfg;
 
     private NotificationManager nm;
-    private Notification statusNotif;
     private WakeLock wakeLock;
 
     private boolean isNetStateDirty = true;
@@ -89,7 +92,11 @@ public class DownloadService extends Service implements DownloadListener {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
+                Log.d(Config.LOG_TAG, "conn-action receive");
                 isNetStateDirty = true;
+                if (DOWNLOAD_THREADS.size() == 0 && DOWNLOAD_QUEUE.size() != 0) {
+                    tryStartQueue();
+                }
             } else if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
                 if (DOWNLOAD_QUEUE.size() != 0) {
                     tryStartQueue();
@@ -112,6 +119,52 @@ public class DownloadService extends Service implements DownloadListener {
                     }
 
                     break;
+                case CMD_PAUSE:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        pause(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                    } else {
+                        for (int id : DOWNLOAD_QUEUE) {
+                            if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_RUNNING) pause(id);
+                        }
+                    }
+                    break;
+                case CMD_RESUME:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        resume(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                    } else {
+                        for (int id : DOWNLOAD_QUEUE) {
+                            if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_PAUSED_USER) resume(id);
+                        }
+                    }
+                    break;
+                case CMD_CANCEL:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        cancel(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                    } else {
+                        for (int id : DOWNLOAD_QUEUE) {
+                            int status = DOWNLOADS.get(id).getStatus();
+                            if (status != DlState.STATUS_CANCELLED_USER &&
+                                    status != DlState.STATUS_COMPLETED &&
+                                    status != DlState.STATUS_FAILED) cancel(id);
+                        }
+                    }
+                    break;
+                case CMD_RETRY:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        int id = intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0);
+                        DlState state = DOWNLOADS.get(id);
+                        if (state != null) {
+                            int status = state.getStatus();
+                            if (status == DlState.STATUS_CANCELLED_USER ||
+                                    status == DlState.STATUS_COMPLETED ||
+                                    status == DlState.STATUS_FAILED) {
+                                state.resetState();
+                                DOWNLOAD_QUEUE.add(id);
+                                tryStartQueue();
+                            }
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -128,7 +181,9 @@ public class DownloadService extends Service implements DownloadListener {
 
         @Override
         public void handleMessage(Message msg) {
-            if (service.get().serviceInUse) return;
+            if (service.get().serviceInUse ||
+                    service.get().DOWNLOAD_THREADS.size() != 0 ||
+                    service.get().DOWNLOAD_QUEUE.size() != 0) return;
             service.get().stopSelf(service.get().startId);
         }
     }
@@ -242,6 +297,9 @@ public class DownloadService extends Service implements DownloadListener {
 
     @Override
     public void onFinish(DlState state, DownloadResult result) {
+        if (result != DownloadResult.CANCELLED && result != DownloadResult.FINISHED && state.getStatus() != DlState.STATUS_FAILED) {
+            DOWNLOAD_QUEUE.add(state.getId());
+        }
         updateStatusNotif();
         cleanupFinish(state);
         saveState(true);
@@ -312,6 +370,7 @@ public class DownloadService extends Service implements DownloadListener {
 
     private int queueDownload(DlState state) {
         int id = state.hashCode();
+        Log.v(Config.LOG_TAG + "Service", "queuing download id=" + id);
         state.setId(id);
         state.setStatus(DlState.STATUS_QUEUED);
         DOWNLOADS.put(id, state);
@@ -334,25 +393,40 @@ public class DownloadService extends Service implements DownloadListener {
             int netCheck = checkNetwork(state);
             if (netCheck == NETWORK_OK) {
                 state.setStatus(DlState.STATUS_STARTING);
-                DownloadTask task = new DownloadTask(state, this);
+                DownloadTask task = new DownloadTask(state, this, this);
                 DOWNLOAD_THREADS.put(id, task);
-                task.execute();
-                it.remove();
 
-                RemoteViews statusView = new RemoteViews(getPackageName(), R.layout.download_status);
-
-                statusNotif = new Notification();
-                statusNotif.contentView = statusView;
-                statusNotif.flags |= Notification.FLAG_NO_CLEAR;
-                statusNotif.icon = R.drawable.ic_download_default;
-                statusNotif.contentIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                        new Intent(getApplicationContext(), Downloads.class), 0);
-                startForeground(Config.DL_STATUS_NOTIF_ID, statusNotif);
+//                RemoteViews statusView = new RemoteViews(getPackageName(), R.layout.download_status);
+//
+//                statusNotif = new Notification();
+//                statusNotif.contentView = statusView;
+//                statusNotif.flags |= Notification.FLAG_NO_CLEAR;
+//                statusNotif.icon = R.drawable.ic_download_default;
+//                statusNotif.contentIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+//                        new Intent(getApplicationContext(), Downloads.class), 0);
+//                startForeground(Config.DL_STATUS_NOTIF_ID, statusNotif);
 
                 updateStatusNotif();
 
+                task.execute();
+                it.remove();
+
                 //TODO if (cfg.getNoParallelDl()) break;
                 break;
+            } else {
+                switch (netCheck) {
+                case NETWORK_NO_WIFI:
+                case NETWORK_SIZE_EXCEEDED:
+                    state.setStatus(DlState.STATUS_PAUSED_FOR_WIFI);
+                    break;
+                case NETWORK_NOT_CONNECTED:
+                    state.setStatus(DlState.STATUS_PAUSED_FOR_DATA);
+                    break;
+                default:
+                    state.setStatus(DlState.STATUS_PAUSED_SYSTEM);
+                }
+
+                updateStatusNotif();
             }
         }
     }
@@ -360,7 +434,7 @@ public class DownloadService extends Service implements DownloadListener {
     private void cleanupFinish(DlState state) {
         DOWNLOAD_THREADS.delete(state.getId());
         if (DOWNLOAD_THREADS.size() == 0) {
-            stopForeground(true);
+            //stopForeground(true);
             wakeLock.release();
             DELAY_STOP_HANDLER.sendMessageDelayed(DELAY_STOP_HANDLER.obtainMessage(), IDLE_DELAY);
         } else {
@@ -376,46 +450,90 @@ public class DownloadService extends Service implements DownloadListener {
         if (System.currentTimeMillis() < minNextNotifUpdate && !force) return;
         minNextNotifUpdate = System.currentTimeMillis() + NOTIF_REFRESH_DELAY;
 
-        if (DOWNLOAD_THREADS.size() == 1) {
-            DlState state = DOWNLOAD_THREADS.valueAt(0).getState();
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        if (DOWNLOAD_THREADS.size() <= 1) {
+            DlState state = null;
+            if (DOWNLOAD_THREADS.size() == 0) {
+                if (DOWNLOAD_QUEUE.size() == 0) return;
+                state = getState(DOWNLOAD_QUEUE.get(0));
+            } else {
+                state = DOWNLOAD_THREADS.valueAt(0).getState();
+            }
+            if (state == null) return;
+            if (state.wasOneTimeNotifShown()) return;
 
             if (state.isRomDownload()) {
-                statusNotif.contentView.setTextViewText(R.id.download_subtext,
-                        getString(R.string.notif_downloading_rom, state.getRomInfo().version));
+                builder.setContentTitle(getString(R.string.notif_downloading_rom, state.getRomInfo().version));
             } else if (state.isKernelDownload()) {
-                statusNotif.contentView.setTextViewText(R.id.download_subtext,
-                        getString(R.string.notif_downloading_kernel, state.getKernelInfo().version));
+                builder.setContentTitle(getString(R.string.notif_downloading_kernel, state.getKernelInfo().version));
+            } else {
+                builder.setContentTitle(getString(R.string.notif_downloading));
             }
+            builder.setTicker(getString(R.string.notif_downloading));
 
             int status = state.getStatus();
-            if (status == DlState.STATUS_RUNNING) {
-                statusNotif.contentView.setTextViewText(R.id.download_bytes_text, state.getProgressStr(this));
 
-                if (state.getTotalSize() == 0) {
-                    statusNotif.contentView.setViewVisibility(R.id.download_pct_text, View.GONE);
-                    statusNotif.contentView.setProgressBar(R.id.download_progress_bar, 0, 0, true);
-                } else {
-                    statusNotif.contentView.setTextViewText(R.id.download_pct_text, getString(R.string.downloads_pct_progress,
-                            Math.round(100.0f * (float) state.getPctDone())));
-                    statusNotif.contentView.setViewVisibility(R.id.download_pct_text, View.VISIBLE);
-                    statusNotif.contentView.setProgressBar(R.id.download_progress_bar, state.getTotalSize(), state.getTotalDone(), false);
-                }
-                statusNotif.contentView.setViewVisibility(R.id.download_bytes_text, View.VISIBLE);
-                statusNotif.contentView.setViewVisibility(R.id.download_progress_bar, View.VISIBLE);
-                statusNotif.contentView.setViewVisibility(R.id.download_subtext, View.GONE);
+            boolean active = status != DlState.STATUS_CANCELLED_USER &&
+                    status != DlState.STATUS_COMPLETED &&
+                    status != DlState.STATUS_FAILED;
+            builder.setOngoing(active);
+            builder.setSmallIcon(status == DlState.STATUS_RUNNING ? android.R.drawable.stat_sys_download : android.R.drawable.stat_sys_download_done);
+
+            if (status == DlState.STATUS_COMPLETED) {
+                Intent i = new Intent(this, Downloads.class);
+                //TODO intent to flash shit
+                builder.setContentIntent(PendingIntent.getActivity(this, 1, i, 0));
+            } else if (active) {
+                Intent i = new Intent(this, Downloads.class);
+                i.putExtra(Downloads.EXTRA_GOTO_TYPE, Downloads.GOTO_TYPE_PENDING);
+                builder.setContentIntent(PendingIntent.getActivity(this, 2, i, 0));
             } else {
-                if (status == DlState.STATUS_QUEUED || status == DlState.STATUS_STARTING) {
-                    statusNotif.contentView.setViewVisibility(R.id.download_progress_bar, View.VISIBLE);
-                    statusNotif.contentView.setProgressBar(R.id.download_progress_bar, 0, 0, true);
-                } else if (status == DlState.STATUS_PAUSED_USER) {
-                    statusNotif.contentView.setViewVisibility(R.id.download_progress_bar, View.VISIBLE);
-                    statusNotif.contentView.setProgressBar(R.id.download_progress_bar, state.getTotalSize(), state.getTotalDone(), false);
-                } else {
-                    statusNotif.contentView.setViewVisibility(R.id.download_progress_bar, View.GONE);
-                }
-                statusNotif.contentView.setViewVisibility(R.id.download_bytes_text, View.GONE);
-                statusNotif.contentView.setViewVisibility(R.id.download_pct_text, View.GONE);
+                Intent i = new Intent(this, Downloads.class);
+                i.putExtra(Downloads.EXTRA_GOTO_TYPE, Downloads.GOTO_TYPE_RECENT);
+                builder.setContentIntent(PendingIntent.getActivity(this, 3, i, 0));
+            }
 
+            if (active) {
+                if (status == DlState.STATUS_QUEUED || status == DlState.STATUS_STARTING || state.getTotalSize() == 0) {
+                    builder.setProgress(0, 0, true);
+                } else {
+                    builder.setProgress(state.getTotalSize(), state.getTotalDone(), false);
+                    builder.setContentInfo(getString(R.string.downloads_pct_progress, Math.round(100.0f * (float) state.getPctDone())));
+                }
+
+                if (status == DlState.STATUS_RUNNING) {
+                    Intent i = new Intent(SERVICE_ACTION);
+                    i.putExtra(EXTRA_CMD, CMD_PAUSE);
+                    i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
+                    builder.addAction(0, getString(R.string.notif_pause), PendingIntent.getBroadcast(this, 4, i, PendingIntent.FLAG_UPDATE_CURRENT));
+                } else if (status == DlState.STATUS_PAUSED_USER) {
+                    Intent i = new Intent(SERVICE_ACTION);
+                    i.putExtra(EXTRA_CMD, CMD_RESUME);
+                    i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
+                    builder.addAction(0, getString(R.string.notif_resume), PendingIntent.getBroadcast(this, 5, i, PendingIntent.FLAG_UPDATE_CURRENT));
+                }
+
+                Intent i = new Intent(SERVICE_ACTION);
+                i.putExtra(EXTRA_CMD, CMD_CANCEL);
+                i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
+                builder.addAction(0, getString(R.string.notif_cancel), PendingIntent.getBroadcast(this, 6, i, PendingIntent.FLAG_UPDATE_CURRENT));
+            } else {
+                if (status == DlState.STATUS_FAILED || status == DlState.STATUS_CANCELLED_USER) {
+                    Intent i = new Intent(SERVICE_ACTION);
+                    i.putExtra(EXTRA_CMD, CMD_RETRY);
+                    i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
+                    builder.addAction(0, getString(R.string.notif_retry), PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT));
+                } else if (status == DlState.STATUS_COMPLETED) {
+                    Intent i = new Intent(this, Downloads.class);
+                    //TODO intent to flash shit
+                    builder.addAction(0, getString(R.string.notif_flash), PendingIntent.getActivity(this, 8, i, 0));
+                }
+                state.setOneTimeNotifShown(true);
+            }
+
+            if (status == DlState.STATUS_RUNNING) {
+                builder.setContentText(state.getProgressStr(this));
+            } else {
                 int subtext = 0;
                 switch (status) {
                 case DlState.STATUS_QUEUED:
@@ -445,17 +563,21 @@ public class DownloadService extends Service implements DownloadListener {
                     subtext = R.string.downloads_cancelled;
                     break;
                 }
-                statusNotif.contentView.setTextViewText(R.id.download_subtext, getString(subtext));
-                statusNotif.contentView.setViewVisibility(R.id.download_subtext, View.VISIBLE);
+                builder.setContentText(getString(subtext));
             }
         } else {
             //TODO multiple download notif
         }
-        nm.notify(Config.DL_STATUS_NOTIF_ID, statusNotif);
+
+        nm.notify(Config.DL_STATUS_NOTIF_ID, builder.build());
     }
 
     public void cancel(int id) {
         DlState state = DOWNLOADS.get(id);
+        if (state == null) return;
+        if (state.getStatus() == DlState.STATUS_CANCELLED_USER ||
+                state.getStatus() == DlState.STATUS_COMPLETED ||
+                state.getStatus() == DlState.STATUS_FAILED) return;
         state.setStatus(DlState.STATUS_CANCELLED_USER);
         DownloadTask task = DOWNLOAD_THREADS.get(id);
         if (task == null) return;
@@ -464,6 +586,8 @@ public class DownloadService extends Service implements DownloadListener {
 
     public void pause(int id) {
         DlState state = DOWNLOADS.get(id);
+        if (state == null) return;
+        if (state.getStatus() != DlState.STATUS_RUNNING) return;
         state.setStatus(DlState.STATUS_PAUSED_USER);
         DownloadTask task = DOWNLOAD_THREADS.get(id);
         if (task == null) return;
@@ -472,6 +596,8 @@ public class DownloadService extends Service implements DownloadListener {
 
     public void resume(int id) {
         DlState state = DOWNLOADS.get(id);
+        if (state == null) return;
+        if (state.getStatus() != DlState.STATUS_PAUSED_USER) return;
         state.setStatus(DlState.STATUS_QUEUED);
         DOWNLOAD_QUEUE.add(id);
         tryStartQueue();
@@ -522,8 +648,13 @@ public class DownloadService extends Service implements DownloadListener {
         if (cfg.getWifiOnlyDl() && ni.getType() != ConnectivityManager.TYPE_WIFI) return NETWORK_NO_WIFI;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            if (ni.getType() != ConnectivityManager.TYPE_WIFI && state.getTotalSize() > 0 &&
-                    state.getTotalSize() > DownloadManager.getMaxBytesOverMobile(this)) return NETWORK_SIZE_EXCEEDED;
+            if (ni.getType() != ConnectivityManager.TYPE_WIFI) {
+                Long maxMobileSize = DownloadManager.getMaxBytesOverMobile(this);
+                if (state.getTotalSize() > 0 &&
+                        maxMobileSize != null &&
+                        state.getTotalSize() > maxMobileSize)
+                    return NETWORK_SIZE_EXCEEDED;
+            }
         }
 
         return NETWORK_OK;

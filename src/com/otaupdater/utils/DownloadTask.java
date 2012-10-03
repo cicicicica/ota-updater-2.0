@@ -28,14 +28,18 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
+import android.content.Context;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.StatFs;
+import android.util.Log;
 
 import com.otaupdater.DownloadService;
 import com.otaupdater.utils.DownloadTask.DownloadResult;
 
 public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
+    private Context context;
+
     private DownloadListener callback = null;
 
     private DlState state;
@@ -43,13 +47,14 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
     private boolean active = false;
     private boolean pausing = false;
 
-    public DownloadTask(DlState state) {
-        this(state, null);
+    public DownloadTask(DlState state, Context ctx) {
+        this(state, ctx, null);
     }
 
-    public DownloadTask(DlState state, DownloadListener callback) {
+    public DownloadTask(DlState state, Context ctx, DownloadListener callback) {
         this.state = state;
         this.callback = callback;
+        this.context = ctx;
 
         state.setTask(this);
     }
@@ -90,7 +95,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
             if (dest.exists()) {
                 if (dest.length() == 0) {
                     dest.delete();
-                } else if (dest.length() == state.getTotalDone() && state.getTotalDone() == state.getTotalSize()) {
+                } else if (state.getTotalDone() == state.getTotalSize() && dest.length() == state.getTotalDone()) {
                     state.setStatus(DlState.STATUS_COMPLETED);
                     return state.setResult(DownloadResult.FINISHED);
                 } else {
@@ -107,26 +112,29 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                 }
             }
 
-            int checkResult = callback.onCheckContinue(state);
-            if (checkResult != 0) {
-                if (checkResult == DownloadService.STOP_NO_WIFI) {
-                    state.setStatus(DlState.STATUS_PAUSED_FOR_WIFI);
-                    return state.setResult(DownloadResult.PAUSED);
-                }
-                if (checkResult == DownloadService.STOP_NO_DATA) {
-                    state.setStatus(DlState.STATUS_PAUSED_FOR_DATA);
-                    return state.setResult(DownloadResult.PAUSED);
+            if (callback != null) {
+                int checkResult = callback.onCheckContinue(state);
+                if (checkResult != 0) {
+                    if (checkResult == DownloadService.STOP_NO_WIFI) {
+                        state.setStatus(DlState.STATUS_PAUSED_FOR_WIFI);
+                        return state.setResult(DownloadResult.PAUSED);
+                    }
+                    if (checkResult == DownloadService.STOP_NO_DATA) {
+                        state.setStatus(DlState.STATUS_PAUSED_FOR_DATA);
+                        return state.setResult(DownloadResult.PAUSED);
+                    }
                 }
             }
 
             HttpResponse resp = null;
             while (true) {
                 HttpGet req = null;
+                boolean success = false;
                 try {
                     req = new HttpGet(state.getSourceURL());
                     if (state.isContinuing()) {
                         req.addHeader("If-Match", state.getETag());
-                        req.addHeader("Range", "bytes=" + state.getTotalDone());
+                        req.addHeader("Range", "bytes=" + state.getTotalDone() + "-");
                     }
                     resp = httpc.execute(req);
 
@@ -187,6 +195,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                         }
                     }
 
+                    success = true;
                     break;
                 } catch (IllegalArgumentException e) {
                     state.setStatus(DlState.STATUS_FAILED);
@@ -195,7 +204,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                     state.setStatus(DlState.STATUS_FAILED);
                     return state.setResult(DownloadResult.FAILED_NETWORK_ERROR);
                 } finally {
-                    if (req != null) {
+                    if (req != null && !success) {
                         req.abort();
                         req = null;
                     }
@@ -214,12 +223,13 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                 if (headerTransferEncoding == null) {
                     header = resp.getFirstHeader("Content-Length");
                     if (header != null) {
+                        state.setTotalSize(Integer.parseInt(header.getValue()));
                         publishProgress(true);
                     }
                 }
 
                 if (state.getTotalSize() != 0) {
-                    StatFs stat = new StatFs(dest.getAbsolutePath());
+                    StatFs stat = new StatFs(dir.getAbsolutePath());
                     long availSpace = ((long) stat.getAvailableBlocks()) * ((long) stat.getBlockSize());
                     if (state.getTotalSize() >= availSpace) {
                         state.setStatus(DlState.STATUS_FAILED);
@@ -233,18 +243,15 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
             }
 
             byte[] buf = new byte[4096];
-            int nRead = -1;
             in = resp.getEntity().getContent();
-            while ((nRead = in.read(buf)) != -1) {
-                out.write(buf, 0, nRead);
-                state.incTotalDone(nRead);
-                publishProgress();
-
+            while (true) {
                 if (this.isCancelled()) {
                     if (pausing) {
+                        Log.v(Config.LOG_TAG + "DLTask", "pausing - user request");
                         state.setStatus(DlState.STATUS_PAUSED_USER);
                         return state.setResult(DownloadResult.PAUSED);
                     } else {
+                        Log.v(Config.LOG_TAG + "DLTask", "cancel - user request");
                         state.setStatus(DlState.STATUS_CANCELLED_USER);
                         return state.setResult(DownloadResult.CANCELLED);
                     }
@@ -252,27 +259,55 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                     int check = callback.onCheckContinue(state);
                     if (check != 0) {
                         if (check == DownloadService.STOP_NO_WIFI) {
+                            Log.v(Config.LOG_TAG + "DLTask", "pausing - need wifi");
                             state.setStatus(DlState.STATUS_PAUSED_FOR_WIFI);
                             return state.setResult(DownloadResult.PAUSED);
                         }
                         if (check == DownloadService.STOP_NO_DATA) {
+                            Log.v(Config.LOG_TAG + "DLTask", "pausing - need data");
                             state.setStatus(DlState.STATUS_PAUSED_FOR_DATA);
                             return state.setResult(DownloadResult.PAUSED);
                         }
                     }
                 }
+
+                int nRead = -1;
+                try {
+                    nRead = in.read(buf);
+                } catch (IOException e) {
+                    boolean data = Utils.dataAvailable(context);
+                    Log.w(Config.LOG_TAG + "DLTask", "IOException reading - connected=" + data);
+
+                    if (!data) {
+                        Log.v(Config.LOG_TAG + "DLTask", "pausing - need data");
+                        state.setStatus(DlState.STATUS_PAUSED_FOR_DATA);
+                        return state.setResult(DownloadResult.PAUSED);
+                    }
+                    continue;
+                }
+
+                if (nRead == -1) break;
+
+                out.write(buf, 0, nRead);
+                state.incTotalDone(nRead);
+                publishProgress();
             }
 
             if (state.getTotalSize() != state.getTotalDone() && state.getTotalSize() != 0) {
+                Log.w(Config.LOG_TAG + "DLTask", "size mismatch after download");
                 //TODO size mismatch - fail?
             }
 
             state.setStatus(DlState.STATUS_COMPLETED);
             return state.setResult(DownloadResult.FINISHED);
         } catch (IOException e) {
+            //Log.w(Config.LOG_TAG + "DLTask", "IOException: " + e.getMessage());
+            e.printStackTrace();
             state.setStatus(DlState.STATUS_FAILED);
             return state.setResult(DownloadResult.FAILED_NETWORK_ERROR);
         } catch (Exception e) {
+            //Log.w(Config.LOG_TAG + "DLTask", "Exception (" + e.getClass().getName() + "): " + e.getMessage());
+            e.printStackTrace();
             state.setStatus(DlState.STATUS_FAILED);
             return state.setResult(DownloadResult.FAILED_UNKNOWN);
         } finally {

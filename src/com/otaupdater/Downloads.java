@@ -48,6 +48,11 @@ import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DlState;
 
 public class Downloads extends SherlockListActivity implements ActionBar.OnNavigationListener, ServiceConnection {
+    public static final String EXTRA_GOTO_TYPE = "goto_type";
+    public static final int GOTO_TYPE_PENDING = 0;
+    public static final int GOTO_TYPE_RECENT = 1;
+    public static final int GOTO_TYPE_ROM = 2;
+    public static final int GOTO_TYPE_KERNEL = 3;
 
     private ArrayList<String> fileList = new ArrayList<String>();
     private ArrayAdapter<String> fileAdapter = null;
@@ -107,7 +112,8 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
         bar.setListNavigationCallbacks(ArrayAdapter.createFromResource(this, R.array.download_types, android.R.layout.simple_spinner_dropdown_item), this);
 
-        if (savedInstanceState != null) {
+        state = getIntent().getIntExtra(EXTRA_GOTO_TYPE, state);
+        if (!getIntent().hasExtra(EXTRA_GOTO_TYPE) && savedInstanceState != null) {
             state = savedInstanceState.getInt("state", state);
         }
         bar.setSelectedNavigationItem(state);
@@ -187,7 +193,7 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
                     if (state == 0) {
                         filter = DlState.FILTER_ACTIVE | DlState.FILTER_PAUSED;
                     } else if (state == 1) {
-                        filter = DlState.FILTER_COMPLETED | DlState.FILTER_CANCELLED;
+                        filter = DlState.FILTER_COMPLETED | DlState.FILTER_CANCELLED | DlState.FILTER_FAILED;
                     }
                     service.getDownloadsFilt(dlList, filter);
                 } catch (RemoteException e) { }

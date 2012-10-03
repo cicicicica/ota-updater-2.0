@@ -1,6 +1,7 @@
 package com.otaupdater.utils;
 
 import java.io.File;
+import java.io.Serializable;
 
 import android.content.Context;
 import android.os.Parcel;
@@ -9,7 +10,9 @@ import android.os.Parcelable;
 import com.otaupdater.R;
 import com.otaupdater.utils.DownloadTask.DownloadResult;
 
-public class DlState implements Parcelable {
+public class DlState implements Parcelable, Serializable {
+    private static final long serialVersionUID = -8208547298965710160L;
+
     public static final int SCALE_KBYTES = 1024;
     public static final int KBYTE_THRESH = 920; //0.9kb
 
@@ -33,17 +36,18 @@ public class DlState implements Parcelable {
 
     public static final int FILTER_ALL = 0;
     public static final int FILTER_PENDING = 1;
-    public static final int FILTER_RUNNING = 2;
-    public static final int FILTER_ACTIVE = 4;
-    public static final int FILTER_INACTIVE = 8;
-    public static final int FILTER_PAUSED = 16;
-    public static final int FILTER_COMPLETED = 32;
-    public static final int FILTER_CANCELLED = 64;
+    public static final int FILTER_RUNNING = 1 << 1;
+    public static final int FILTER_ACTIVE = 1 << 2;
+    public static final int FILTER_INACTIVE = 1 << 3;
+    public static final int FILTER_PAUSED = 1 << 4;
+    public static final int FILTER_COMPLETED = 1 << 5;
+    public static final int FILTER_CANCELLED = 1 << 6;
+    public static final int FILTER_FAILED = 1 << 7;
 
     private final RomInfo romInfo;
     private final KernelInfo kernelInfo;
 
-    private DownloadTask task;
+    private transient DownloadTask task;
 
     private int id;
     private int totalSize = 0;
@@ -57,6 +61,7 @@ public class DlState implements Parcelable {
     private boolean pausing = false;
     private boolean continuing = false;
     private DownloadResult result = null;
+    private boolean oneTimeNotifShown = false;
 
     public DlState(RomInfo info) {
         romInfo = info;
@@ -66,6 +71,21 @@ public class DlState implements Parcelable {
     public DlState(KernelInfo info) {
         kernelInfo = info;
         romInfo = null;
+    }
+
+    public void resetState() {
+        totalSize = 0;
+        totalDone = 0;
+        status = STATUS_QUEUED;
+        numRedirects = 0;
+        redirectedURL = null;
+        numFailed = 0;
+        retryAfter = -1;
+        eTag = null;
+        pausing = false;
+        continuing = false;
+        result = null;
+        setOneTimeNotifShown(false);
     }
 
     public boolean isRomDownload() {
@@ -250,6 +270,14 @@ public class DlState implements Parcelable {
         this.numRedirects++;
     }
 
+    public boolean wasOneTimeNotifShown() {
+        return oneTimeNotifShown;
+    }
+
+    public void setOneTimeNotifShown(boolean oneTimeNotifShown) {
+        this.oneTimeNotifShown = oneTimeNotifShown;
+    }
+
     public boolean matchesFilter(int filter) {
         if (filter == FILTER_ALL) return true;
 
@@ -289,6 +317,10 @@ public class DlState implements Parcelable {
 
         if ((filter & FILTER_COMPLETED) != 0) {
             if (status == STATUS_COMPLETED) return true;
+        }
+
+        if ((filter & FILTER_FAILED) != 0) {
+            if (status == STATUS_FAILED) return true;
         }
 
         if ((filter & FILTER_RUNNING) != 0) {
