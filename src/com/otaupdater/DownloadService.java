@@ -91,8 +91,10 @@ public class DownloadService extends Service implements DownloadListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            if (action == null) return;
+            Log.v(Config.LOG_TAG + "Service", "got action: " + action);
+
             if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
-                Log.d(Config.LOG_TAG, "conn-action receive");
                 isNetStateDirty = true;
                 if (DOWNLOAD_THREADS.size() == 0 && DOWNLOAD_QUEUE.size() != 0) {
                     tryStartQueue();
@@ -502,24 +504,28 @@ public class DownloadService extends Service implements DownloadListener {
                 }
 
                 if (status == DlState.STATUS_RUNNING) {
-                    Intent i = new Intent(SERVICE_ACTION);
+                    Intent i = new Intent(this, DownloadReceiver.class);
+                    i.setAction(SERVICE_ACTION);
                     i.putExtra(EXTRA_CMD, CMD_PAUSE);
                     i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
                     builder.addAction(0, getString(R.string.notif_pause), PendingIntent.getBroadcast(this, 4, i, PendingIntent.FLAG_UPDATE_CURRENT));
                 } else if (status == DlState.STATUS_PAUSED_USER) {
-                    Intent i = new Intent(SERVICE_ACTION);
+                    Intent i = new Intent(this, DownloadReceiver.class);
+                    i.setAction(SERVICE_ACTION);
                     i.putExtra(EXTRA_CMD, CMD_RESUME);
                     i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
                     builder.addAction(0, getString(R.string.notif_resume), PendingIntent.getBroadcast(this, 5, i, PendingIntent.FLAG_UPDATE_CURRENT));
                 }
 
-                Intent i = new Intent(SERVICE_ACTION);
+                Intent i = new Intent(this, DownloadReceiver.class);
+                i.setAction(SERVICE_ACTION);
                 i.putExtra(EXTRA_CMD, CMD_CANCEL);
                 i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
                 builder.addAction(0, getString(R.string.notif_cancel), PendingIntent.getBroadcast(this, 6, i, PendingIntent.FLAG_UPDATE_CURRENT));
             } else {
                 if (status == DlState.STATUS_FAILED || status == DlState.STATUS_CANCELLED_USER) {
-                    Intent i = new Intent(SERVICE_ACTION);
+                    Intent i = new Intent(this, DownloadReceiver.class);
+                    i.setAction(SERVICE_ACTION);
                     i.putExtra(EXTRA_CMD, CMD_RETRY);
                     i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
                     builder.addAction(0, getString(R.string.notif_retry), PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT));

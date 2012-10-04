@@ -106,6 +106,7 @@
             <intent-filter>
                 <action android:name="com.otaupdater.action.DL_ROM_ACTION" />
                 <action android:name="com.otaupdater.action.DL_KERNEL_ACTION" />
+                <action android:name="com.otaupdater.downloadservice.command" />
             </intent-filter>
         </receiver>
         
