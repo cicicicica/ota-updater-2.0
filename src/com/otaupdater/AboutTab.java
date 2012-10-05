@@ -95,7 +95,7 @@ public class AboutTab extends SherlockListFragment {
         super.onActivityCreated(savedInstanceState);
         setListAdapter(new SimpleAdapter(getActivity(),
                 DATA,
-                android.R.layout.simple_list_item_2,
+                R.layout.two_line_icon_list_item,
                 new String[] { "title", "summary" },
                 new int[] { android.R.id.text1, android.R.id.text2 }));
     }
