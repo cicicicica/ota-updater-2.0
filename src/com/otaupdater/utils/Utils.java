@@ -27,6 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -104,6 +107,17 @@ public class Utils {
             }
         }
         return "";
+    }
+
+    public static String hmac(String str, String key) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA1");
+            mac.init(new SecretKeySpec(key.getBytes(), mac.getAlgorithm()));
+            return byteArrToStr(mac.doFinal(str.getBytes()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void toastWrapper(final Activity activity, final CharSequence text, final int duration) {

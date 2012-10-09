@@ -87,6 +87,9 @@ public class Config {
     private RomInfo storedRomUpdate = null;
     private KernelInfo storedKernelUpdate = null;
 
+    private String username = null;
+    private String hmacKey = null;
+
     private static final String PREFS_NAME = "prefs";
     private final SharedPreferences PREFS;
 
@@ -94,6 +97,9 @@ public class Config {
         PREFS = ctx.getApplicationContext().getSharedPreferences(PREFS_NAME, 0);
 
         keyExpires = PREFS.getLong("keyExpires", keyExpires);
+
+        username = PREFS.getString("username", username);
+        hmacKey = PREFS.getString("hmacKey", hmacKey);
 
         showNotif = PREFS.getBoolean("showNotif", showNotif);
         wifiOnlyDl = PREFS.getBoolean("wifiOnlyDl", wifiOnlyDl);
@@ -301,6 +307,42 @@ public class Config {
             editor.remove("kernel_info_date");
             editor.commit();
         }
+    }
+
+    public boolean isUserLoggedIn() {
+        return username != null && hmacKey != null;
+    }
+
+    public void storeLogin(String username, String hmacKey) {
+        this.username = username;
+        this.hmacKey = hmacKey;
+
+        synchronized (PREFS) {
+            SharedPreferences.Editor editor = PREFS.edit();
+            editor.putString("username", username);
+            editor.putString("hmacKey", hmacKey);
+            editor.commit();
+        }
+    }
+
+    public void clearLogin() {
+        username = null;
+        hmacKey = null;
+
+        synchronized (PREFS) {
+            SharedPreferences.Editor editor = PREFS.edit();
+            editor.remove("username");
+            editor.remove("hmacKey");
+            editor.commit();
+        }
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getHmacKey() {
+        return hmacKey;
     }
 
     private void putBoolean(String name, boolean value) {
