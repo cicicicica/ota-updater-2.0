@@ -24,11 +24,15 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
 import android.content.Context;
+import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.StatFs;
@@ -75,7 +79,8 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
 
     @Override
     protected DownloadResult doInBackground(Void... params) {
-        AndroidHttpClient httpc = AndroidHttpClient.newInstance("OTA Update Center Downloader");
+        AndroidHttpClient httpc = null;
+        FTPClient ftpc = null;
 
         InputStream in = null;
         OutputStream out = null;
@@ -126,124 +131,162 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                 }
             }
 
-            HttpResponse resp = null;
-            while (true) {
-                HttpGet req = null;
-                boolean success = false;
-                try {
-                    req = new HttpGet(state.getSourceURL());
-                    if (state.isContinuing()) {
-                        req.addHeader("If-Match", state.getETag());
-                        req.addHeader("Range", "bytes=" + state.getTotalDone() + "-");
-                    }
-                    resp = httpc.execute(req);
-
-                    int statusCode = resp.getStatusLine().getStatusCode();
-                    if (statusCode == 503) {
-                        if (state.getNumFailed() >= Config.DL_MAX_RETRIES) {
-                            state.setStatus(DlState.STATUS_FAILED);
-                            return state.setResult(DownloadResult.FAILED_TOO_MANY_RETRIES);
+            Uri dlUri = Uri.parse(state.getSourceURL());
+            if (dlUri.getScheme().equals("http")) {
+                httpc = AndroidHttpClient.newInstance(Config.HTTPC_UA, context);
+                HttpResponse resp = null;
+                while (true) {
+                    HttpGet req = null;
+                    boolean success = false;
+                    try {
+                        req = new HttpGet(state.getSourceURL());
+                        if (state.isContinuing()) {
+                            req.addHeader("If-Match", state.getETag());
+                            req.addHeader("Range", "bytes=" + state.getTotalDone() + "-");
                         }
-                        Header header = resp.getFirstHeader("Retry-After");
-                        if (header == null) {
-                            state.setRetryAfter(Config.DL_RETRY_MIN * (1 << state.getNumFailed()));
-                        } else {
-                            int retry = Integer.parseInt(header.getValue());
-                            if (retry < 0) {
-                                state.setRetryAfter(Config.DL_RETRY_MIN);
+                        resp = httpc.execute(req);
+
+                        int statusCode = resp.getStatusLine().getStatusCode();
+                        if (statusCode == 503) {
+                            if (state.getNumFailed() >= Config.DL_MAX_RETRIES) {
+                                state.setStatus(DlState.STATUS_FAILED);
+                                return state.setResult(DownloadResult.FAILED_TOO_MANY_RETRIES);
+                            }
+                            Header header = resp.getFirstHeader("Retry-After");
+                            if (header == null) {
+                                state.setRetryAfter(Config.DL_RETRY_MIN * (1 << state.getNumFailed()));
                             } else {
-                                if (retry < Config.DL_RETRY_MIN) retry = Config.DL_RETRY_MIN;
-                                if (retry > Config.DL_RETRY_MAX) retry = Config.DL_RETRY_MAX;
-                                retry += (int) (Config.DL_RETRY_MIN * Math.random());
-                                state.setRetryAfter(retry);
+                                int retry = Integer.parseInt(header.getValue());
+                                if (retry < 0) {
+                                    state.setRetryAfter(Config.DL_RETRY_MIN);
+                                } else {
+                                    if (retry < Config.DL_RETRY_MIN) retry = Config.DL_RETRY_MIN;
+                                    if (retry > Config.DL_RETRY_MAX) retry = Config.DL_RETRY_MAX;
+                                    retry += (int) (Config.DL_RETRY_MIN * Math.random());
+                                    state.setRetryAfter(retry);
+                                }
+                            }
+                            state.incNumFailed();
+                            state.setStatus(DlState.STATUS_PAUSED_RETRY);
+                            return state.setResult(DownloadResult.RETRY_LATER);
+                        }
+                        if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307) {
+                            if (state.getNumRedirects() >= Config.DL_MAX_REDIRECTS) {
+                                state.setStatus(DlState.STATUS_FAILED);
+                                return state.setResult(DownloadResult.FAILED_TOO_MANY_REDIRECTS);
+                            }
+                            Header header = resp.getFirstHeader("Location");
+                            if (header == null) {
+                                state.setStatus(DlState.STATUS_FAILED);
+                                return state.setResult(DownloadResult.FAILED_PROTOCAL_ERROR);
+                            }
+                            String newUri;
+                            try {
+                                newUri = new URI(state.getSourceURL()).resolve(new URI(header.getValue())).toString();
+                            } catch (URISyntaxException e) {
+                                state.setStatus(DlState.STATUS_FAILED);
+                                return state.setResult(DownloadResult.FAILED_PROTOCAL_ERROR);
+                            }
+                            state.incNumRedirects();
+                            state.setRedirectURL(newUri);
+                        }
+                        if (statusCode != (state.isContinuing() ? 206 : 200)) {
+                            state.setStatus(DlState.STATUS_FAILED);
+                            if (statusCode == 416 || (state.isContinuing() && statusCode != 206)) {
+                                return state.setResult(DownloadResult.FAILED_CANNOT_RESUME);
+                            } else if (statusCode >= 300 && statusCode < 400) {
+                                return state.setResult(DownloadResult.FAILED_UNHANDLED_REDIRECT);
+                            } else if (statusCode >= 400 && statusCode < 600) {
+                                return state.setResult(DownloadResult.FAILED_HTTP_ERROR_CODE);
+                            } else {
+                                return state.setResult(DownloadResult.FAILED_UNHANDLED_HTTP_CODE);
                             }
                         }
-                        state.incNumFailed();
-                        state.setStatus(DlState.STATUS_PAUSED_RETRY);
-                        return state.setResult(DownloadResult.RETRY_LATER);
-                    }
-                    if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307) {
-                        if (state.getNumRedirects() >= Config.DL_MAX_REDIRECTS) {
-                            state.setStatus(DlState.STATUS_FAILED);
-                            return state.setResult(DownloadResult.FAILED_TOO_MANY_REDIRECTS);
-                        }
-                        Header header = resp.getFirstHeader("Location");
-                        if (header == null) {
-                            state.setStatus(DlState.STATUS_FAILED);
-                            return state.setResult(DownloadResult.FAILED_HTTP_PROTOCAL_ERROR);
-                        }
-                        String newUri;
-                        try {
-                            newUri = new URI(state.getSourceURL()).resolve(new URI(header.getValue())).toString();
-                        } catch (URISyntaxException e) {
-                            state.setStatus(DlState.STATUS_FAILED);
-                            return state.setResult(DownloadResult.FAILED_HTTP_PROTOCAL_ERROR);
-                        }
-                        state.incNumRedirects();
-                        state.setRedirectURL(newUri);
-                    }
-                    if (statusCode != (state.isContinuing() ? 206 : 200)) {
+
+                        success = true;
+                        break;
+                    } catch (IllegalArgumentException e) {
                         state.setStatus(DlState.STATUS_FAILED);
-                        if (statusCode == 416 || (state.isContinuing() && statusCode != 206)) {
-                            return state.setResult(DownloadResult.FAILED_CANNOT_RESUME);
-                        } else if (statusCode >= 300 && statusCode < 400) {
-                            return state.setResult(DownloadResult.FAILED_UNHANDLED_REDIRECT);
-                        } else if (statusCode >= 400 && statusCode < 600) {
-                            return state.setResult(DownloadResult.FAILED_ERROR_HTTP_CODE);
-                        } else {
-                            return state.setResult(DownloadResult.FAILED_UNHANDLED_HTTP_CODE);
+                        return state.setResult(DownloadResult.FAILED_PROTOCAL_ERROR);
+                    } catch (IOException e) {
+                        state.setStatus(DlState.STATUS_FAILED);
+                        return state.setResult(DownloadResult.FAILED_NETWORK_ERROR);
+                    } finally {
+                        if (req != null && !success) {
+                            req.abort();
+                            req = null;
                         }
                     }
-
-                    success = true;
-                    break;
-                } catch (IllegalArgumentException e) {
-                    state.setStatus(DlState.STATUS_FAILED);
-                    return state.setResult(DownloadResult.FAILED_HTTP_PROTOCAL_ERROR);
-                } catch (IOException e) {
-                    state.setStatus(DlState.STATUS_FAILED);
-                    return state.setResult(DownloadResult.FAILED_NETWORK_ERROR);
-                } finally {
-                    if (req != null && !success) {
-                        req.abort();
-                        req = null;
-                    }
                 }
-            }
 
-            if (!state.isContinuing()) {
-                Header header = resp.getFirstHeader("ETag");
-                if (header != null) state.setETag(header.getValue());
+                if (!state.isContinuing()) {
+                    Header header = resp.getFirstHeader("ETag");
+                    if (header != null) state.setETag(header.getValue());
 
-                String headerTransferEncoding = null;
-                header = resp.getFirstHeader("Transfer-Encoding");
-                if (header != null) {
-                    headerTransferEncoding = header.getValue();
-                }
-                if (headerTransferEncoding == null) {
-                    header = resp.getFirstHeader("Content-Length");
+                    String headerTransferEncoding = null;
+                    header = resp.getFirstHeader("Transfer-Encoding");
                     if (header != null) {
-                        state.setTotalSize(Integer.parseInt(header.getValue()));
-                        publishProgress(true);
+                        headerTransferEncoding = header.getValue();
                     }
+                    if (headerTransferEncoding == null) {
+                        header = resp.getFirstHeader("Content-Length");
+                        if (header != null) {
+                            state.setTotalSize(Integer.parseInt(header.getValue()));
+                            publishProgress(true);
+                        }
+                    }
+
+                    if (state.getTotalSize() != 0) {
+                        StatFs stat = new StatFs(dir.getAbsolutePath());
+                        long availSpace = ((long) stat.getAvailableBlocks()) * ((long) stat.getBlockSize());
+                        if (state.getTotalSize() >= availSpace) {
+                            state.setStatus(DlState.STATUS_FAILED);
+                            return state.setResult(DownloadResult.FAILED_NOT_ENOUGH_SPACE);
+                        }
+                    }
+
+                    out = new FileOutputStream(dest);
+                } else {
+                    publishProgress(true);
                 }
 
-                if (state.getTotalSize() != 0) {
-                    StatFs stat = new StatFs(dir.getAbsolutePath());
-                    long availSpace = ((long) stat.getAvailableBlocks()) * ((long) stat.getBlockSize());
-                    if (state.getTotalSize() >= availSpace) {
-                        state.setStatus(DlState.STATUS_FAILED);
-                        return state.setResult(DownloadResult.FAILED_NOT_ENOUGH_SPACE);
-                    }
+                in = resp.getEntity().getContent();
+            } else if (dlUri.getScheme().equals("ftp")) {
+                ftpc = new FTPClient();
+
+                if (dlUri.getPort() == -1) {
+                    ftpc.connect(dlUri.getHost());
+                } else {
+                    ftpc.connect(dlUri.getHost(), dlUri.getPort());
                 }
 
-                out = new FileOutputStream(dest);
+                if (!FTPReply.isPositiveCompletion(ftpc.getReplyCode())) {
+                    state.setStatus(DlState.STATUS_FAILED);
+                    return state.setResult(DownloadResult.FAILED_CONNECTION_REFUSED);
+                }
+
+                boolean loginRes;
+                if (dlUri.getUserInfo() == null) {
+                    loginRes = ftpc.login("anonymous", "anonymous");
+                } else {
+                    String[] parts = dlUri.getUserInfo().split(":", 2);
+                    loginRes = ftpc.login(parts[0], parts[1]);
+                }
+
+                if (!loginRes) {
+                    state.setStatus(DlState.STATUS_FAILED);
+                    return state.setResult(DownloadResult.FAILED_FTP_LOGIN_ERROR);
+                }
+
+                ftpc.enterLocalPassiveMode();
+                ftpc.setFileType(FTP.BINARY_FILE_TYPE);
+
+                in = ftpc.retrieveFileStream(dlUri.getPath());
             } else {
-                publishProgress(true);
+                Log.e(Config.LOG_TAG + "DLTask", "invalid scheme " + dlUri.getScheme());
             }
 
             byte[] buf = new byte[4096];
-            in = resp.getEntity().getContent();
             while (true) {
                 if (this.isCancelled()) {
                     if (pausing) {
@@ -311,16 +354,30 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
             state.setStatus(DlState.STATUS_FAILED);
             return state.setResult(DownloadResult.FAILED_UNKNOWN);
         } finally {
-            httpc.close();
-            httpc = null;
-
             if (in != null) {
                 try { in.close(); }
                 catch (IOException e) { }
             }
+
             if (out != null) {
                 try { out.flush(); out.close(); }
                 catch (IOException e) { }
+            }
+
+            if (httpc != null) {
+                httpc.close();
+                httpc = null;
+            }
+
+            if (ftpc != null) {
+                try {
+                    if (ftpc.isConnected()) {
+                        ftpc.abort();
+                        ftpc.logout();
+                        ftpc.disconnect();
+                    }
+                    ftpc = null;
+                } catch (IOException e) { }
             }
         }
     }
@@ -366,9 +423,9 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
 
     public static enum DownloadResult {
         FINISHED, CANCELLED, PAUSED, RETRY_LATER, FAILED_UNKNOWN,
-        FAILED_MOUNT_NOT_AVAILABLE, FAILED_NOT_ENOUGH_SPACE, FAILED_HTTP_PROTOCAL_ERROR, FAILED_NETWORK_ERROR,
+        FAILED_MOUNT_NOT_AVAILABLE, FAILED_NOT_ENOUGH_SPACE, FAILED_PROTOCAL_ERROR, FAILED_NETWORK_ERROR,
         FAILED_TOO_MANY_REDIRECTS, FAILED_TOO_MANY_RETRIES, FAILED_CANNOT_RESUME, FAILED_UNHANDLED_REDIRECT,
-        FAILED_UNHANDLED_HTTP_CODE, FAILED_ERROR_HTTP_CODE
+        FAILED_UNHANDLED_HTTP_CODE, FAILED_HTTP_ERROR_CODE, FAILED_FTP_LOGIN_ERROR, FAILED_CONNECTION_REFUSED
     }
 
     public static interface DownloadListener {

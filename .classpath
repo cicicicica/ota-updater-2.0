@@ -7,5 +7,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="lib" path="libs/annotations.jar"/>
+	<classpathentry kind="lib" path="libs/commons-net-3.1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
