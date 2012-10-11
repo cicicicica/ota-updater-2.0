@@ -25,16 +25,21 @@ import android.content.pm.PackageManager.NameNotFoundException;
 public class Config {
     public static final String LOG_TAG = "OTA::";
 
-    public static final String WEB_HOME_URL = "http://www.otaupdatecenter.pro/test/";
-    public static final String WEB_FEEDBACK_URL = WEB_HOME_URL + "?page=feedback";
+    public static final String HTTPC_UA = "OTA Updater App HTTP Client";
+
     public static final String GPLUS_URL = "https://plus.google.com/102074511541445644953/posts";
     public static final String PP_DONATE_URL = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5UAZTL2YQ57ZS";
 
-    public static final String GCM_SENDER_ID = "1068482628480";
+    public static final String WEB_HOME_URL = "http://otaupdatecenter.pro/test/";
+    public static final String WEB_FEEDBACK_URL = WEB_HOME_URL + "?page=feedback";
+    public static final String LOGIN_URL = WEB_HOME_URL + "pages/auth_login_key.php";
+    public static final String LOGOUT_URL = WEB_HOME_URL + "pages/auth_logout_key.php";
+    public static final String CODE_REDEEM_URL = WEB_HOME_URL + "pages/code_redeem.php";
     public static final String GCM_REGISTER_URL = WEB_HOME_URL + "pages/regdevice.php";
-
     public static final String ROM_PULL_URL = WEB_HOME_URL + "pages/rom_info.php";
     public static final String KERNEL_PULL_URL = WEB_HOME_URL + "pages/kernel_info.php";
+
+    public static final String GCM_SENDER_ID = "1068482628480";
 
     public static final String OTA_SD_PATH_OS_PROP = "otaupdater.sdcard.os";
     public static final String OTA_SD_PATH_RECOVERY_PROP = "otaupdater.sdcard.recovery";
@@ -67,6 +72,7 @@ public class Config {
         KERNEL_DL_PATH_FILE.mkdirs();
     }
 
+    private String redeemCode = null;
     private long keyExpires = 0;
 
     private boolean showNotif = true;
@@ -96,6 +102,7 @@ public class Config {
     private Config(Context ctx) {
         PREFS = ctx.getApplicationContext().getSharedPreferences(PREFS_NAME, 0);
 
+        redeemCode = PREFS.getString("redeemCode", redeemCode);
         keyExpires = PREFS.getLong("keyExpires", keyExpires);
 
         username = PREFS.getString("username", username);
@@ -162,6 +169,19 @@ public class Config {
     public void setKeyExpiry(long expiry) {
         this.keyExpires = expiry;
         putLong("keyExpires", keyExpires);
+    }
+
+    public String getRedeemCode() {
+        return redeemCode;
+    }
+
+    public void setRedeemCode(String redeemCode) {
+        this.redeemCode = redeemCode;
+        synchronized (PREFS) {
+            SharedPreferences.Editor editor = PREFS.edit();
+            editor.putString("redeemCode", redeemCode);
+            editor.commit();
+        }
     }
 
     public boolean getShowNotif() {

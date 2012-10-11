@@ -53,6 +53,12 @@
     <string name="alert_close">Close</string>
     <string name="alert_hide">Hide</string>
     <string name="alert_rename">Rename</string>
+    <string name="alert_login_title">Log In to your account</string>
+    <string name="alert_login">Login</string>
+    <string name="alert_logging_in">Logging in&#8230;</string>
+    <string name="alert_login_message">Please use the login credentials you used when registering on the OTA Update Center website</string>
+    <string name="alert_login_user_hint">Username</string>
+    <string name="alert_login_pass_hint">Password</string>
     <string name="alert_install_title">Install ZIP</string>
     <string name="alert_install">Install</string>
     <string name="alert_install_message">Installing the file will reboot into recovery to flash the ZIP file. After installation, the system will automatically reboot.</string>
@@ -94,6 +100,7 @@
     <string name="toast_license_file_error">Error loading contributors file</string>
     <string name="toast_nosd_shared">Your SD card is unavailable - mounted as USB Storage</string>
     <string name="toast_nosd_error">You SD card is unavailable</string>
+    <string name="toast_blank_userpass_error">Please enter your username and password!!</string>
 
     <string name="about_title">About</string>
     <string name="about_ota_title">OTA Updater</string>
@@ -188,7 +195,7 @@
     <string name="loading_dialog_title">Loading&#8230;</string>
     
     <string name="alt_icon">Icon</string>
-
+    
     <string name="settings_title">OTA Updater Settings</string>
     <string name="settings_account_title">Add account</string>
     <string name="settings_account_summary">Log into your OTA Update Center account</string>
@@ -210,6 +217,7 @@
     <string name="settings_prokey_summary_redeemed">You have redeemed a PRO Key code!</string>
     <string name="settings_prokey_summary_verify">Thank you for buying the PRO Key!\nVerification did not complete last time, tap to try again..</string>
     <string name="settings_prokey_summary_verifying">Thank you for buying the PRO Key!\nKey verification in progress&#8230;</string>
+    <string name="settings_prokey_redeeming">Redeeming&#8230;</string>
     <string name="settings_donate_title">Donate</string>
     <string name="settings_donate_summary">Any donations are greatly accepted and go directly to pay hosting costs</string>
     

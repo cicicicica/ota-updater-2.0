@@ -486,6 +486,13 @@ public class Utils {
         return md5(deviceID);
     }
 
+    public static String getDeviceName(Context ctx) {
+        String carrier = ((TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName();
+        if (carrier == null) carrier = "Wi-Fi";
+
+        return carrier + " " + Build.MODEL;
+    }
+
     public static String sanitizeName(String name) {
         if (name == null) return "";
 
