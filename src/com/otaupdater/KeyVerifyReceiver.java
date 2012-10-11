@@ -9,6 +9,8 @@ import android.widget.Toast;
 import com.otaupdater.utils.Config;
 
 public class KeyVerifyReceiver extends BroadcastReceiver {
+    private static final long MARKET_REFUND_TIME = 1800000; //30 minutes in ms - give enough time to refund+whatever
+
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.v(Config.LOG_TAG + "KeyVerify", "got pro key response");
@@ -41,17 +43,28 @@ public class KeyVerifyReceiver extends BroadcastReceiver {
 
         final Config cfg = Config.getInstance(context.getApplicationContext());
 
-        if (licensed) {
-            if (definitive) {
-                cfg.setKeyExpiry(-1);
-                Toast.makeText(context, R.string.prokey_verified, Toast.LENGTH_LONG).show();
+        if (definitive) {
+            if (licensed) {
+                if (cfg.getKeyState() == Config.KEY_STATE_VERIF1_IP) {
+                    cfg.setKeyState(Config.KEY_STATE_VERIF1_GOOD);
+                    cfg.setNextKeyVerif(System.currentTimeMillis() + MARKET_REFUND_TIME);
+                    Toast.makeText(context, R.string.prokey_verified, Toast.LENGTH_LONG).show();
+                } else if (cfg.getKeyState() == Config.KEY_STATE_VERIF2_IP) {
+                    cfg.setKeyState(Config.KEY_STATE_VERIF2_GOOD);
+                }
             } else {
-                cfg.setKeyExpiry(System.currentTimeMillis() + intent.getLongExtra("retry_after", 0));
-                Toast.makeText(context, R.string.prokey_noverify, Toast.LENGTH_LONG).show();
+                cfg.setKeyState(Config.KEY_STATE_INVALID_VERIF);
+                Toast.makeText(context, R.string.prokey_invalid, Toast.LENGTH_LONG).show();
             }
         } else {
-            cfg.setKeyExpiry(0);
-            Toast.makeText(context, definitive ? R.string.prokey_invalid : R.string.prokey_noverify, Toast.LENGTH_LONG).show();
+            if (cfg.getKeyState() == Config.KEY_STATE_VERIF1_IP) {
+                cfg.setKeyState(Config.KEY_STATE_VERIF1_FAIL);
+                cfg.setNextKeyVerif(System.currentTimeMillis() + intent.getLongExtra("retry_after", 0));
+            } else if (cfg.getKeyState() == Config.KEY_STATE_VERIF2_IP) {
+                cfg.setKeyState(Config.KEY_STATE_VERIF2_FAIL);
+                cfg.setNextKeyVerif(System.currentTimeMillis() + intent.getLongExtra("retry_after", 0));
+            }
+            Toast.makeText(context, R.string.prokey_noverify, Toast.LENGTH_LONG).show();
         }
     }
 }

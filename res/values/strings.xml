@@ -211,10 +211,11 @@
     <string name="settings_stats_summary">Help us improve the app by opting into annonymous statistics reporting</string>
     <string name="settings_support">Support Development</string>
     <string name="settings_prokey_title">Buy PRO Key</string>
+    <string name="settings_prokey_title_pro">PRO Key</string>
     <string name="settings_prokey_summary">Buying a PRO Key will disable ads and help us pay the costs of running this service</string>
-    <string name="settings_prokey_summary_pro">THank you for buying the PRO Key.\nWe appreciate your support!</string>
+    <string name="settings_prokey_summary_pro">Thank you for buying the PRO Key.\nWe appreciate your support!</string>
     <string name="settings_prokey_summary_nomarket">Unfortunately, you cannot buy a PRO Key because you do not have the Play Store installed.</string>
-    <string name="settings_prokey_summary_redeemed">You have redeemed a PRO Key code!</string>
+    <string name="settings_prokey_summary_redeemed">You have redeemed a PRO Key code!\nCode used: %1$s</string>
     <string name="settings_prokey_summary_verify">Thank you for buying the PRO Key!\nVerification did not complete last time, tap to try again..</string>
     <string name="settings_prokey_summary_verifying">Thank you for buying the PRO Key!\nKey verification in progress&#8230;</string>
     <string name="settings_prokey_redeeming">Redeeming&#8230;</string>

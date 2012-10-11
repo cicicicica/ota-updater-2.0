@@ -72,8 +72,33 @@ public class Config {
         KERNEL_DL_PATH_FILE.mkdirs();
     }
 
+    /*
+     * keyState values:
+     *  - 0: key app not installed, redeem code not verified
+     *  - 1: key app installed, not verified
+     *  - 2: key app installed, first verification in progress
+     *  - 3: key app installed, first verification failed; nextKeyVerif=time of next retry
+     *  - 5: key app installed, first verification succeeded; nextKeyVerif=time of second verification
+     *  - 6: key app installed, second verification in progress
+     *  - 7: key app installed, second verification failed; nextKeyVerif=time of next retry
+     *  - 11: key app installed, second verification succeeded, no more retries
+     *  - 13: key app not installed, redeem code verified; redeemCode=code that was redeemed
+     *  - -1: key app installed, verified invalid
+     */
+    public static final int KEY_STATE_NONE = 0;
+    public static final int KEY_STATE_NOVERIF = 1;
+    public static final int KEY_STATE_VERIF1_IP = 2;
+    public static final int KEY_STATE_VERIF1_FAIL = 3;
+    public static final int KEY_STATE_VERIF1_GOOD = 5;
+    public static final int KEY_STATE_VERIF2_IP = 6;
+    public static final int KEY_STATE_VERIF2_FAIL = 7;
+    public static final int KEY_STATE_VERIF2_GOOD = 11;
+    public static final int KEY_STATE_REDEEM_CODE = 13;
+    public static final int KEY_STATE_INVALID_VERIF = -1;
+
+    private int keyState = 0;
     private String redeemCode = null;
-    private long keyExpires = 0;
+    private long nextKeyVerif = 0;
 
     private boolean showNotif = true;
     private boolean wifiOnlyDl = true;
@@ -102,8 +127,9 @@ public class Config {
     private Config(Context ctx) {
         PREFS = ctx.getApplicationContext().getSharedPreferences(PREFS_NAME, 0);
 
+        keyState = PREFS.getInt("keyState", keyState);
         redeemCode = PREFS.getString("redeemCode", redeemCode);
-        keyExpires = PREFS.getLong("keyExpires", keyExpires);
+        nextKeyVerif = PREFS.getLong("nextKeyVerif", nextKeyVerif);
 
         username = PREFS.getString("username", username);
         hmacKey = PREFS.getString("hmacKey", hmacKey);
@@ -143,6 +169,8 @@ public class Config {
         curDevice = android.os.Build.DEVICE.toLowerCase();
         curRomID = Utils.isRomOtaEnabled() ? Utils.getRomOtaID() : null;
         curKernelID = Utils.isKernelOtaEnabled() ? Utils.getKernelOtaID() : null;
+
+        Utils.verifyKeyState(ctx);
     }
     private static Config instance = null;
     public static synchronized Config getInstance(Context ctx) {
@@ -151,24 +179,45 @@ public class Config {
     }
 
     public boolean hasValidProKey() {
-        return keyExpires == -1;
+        return keyState > 0;
+    }
+
+    public boolean hasRedeemCode() {
+        return keyState == KEY_STATE_REDEEM_CODE && redeemCode != null;
     }
 
     public boolean isProKeyTemporary() {
-        return keyExpires > 0;
+        return keyState < 10;
     }
 
     public boolean isVerifyingProKey() {
-        return keyExpires == -2;
+        return hasValidProKey() && keyState % 2 == 0;
     }
 
-    public long getKeyExpires() {
-        return keyExpires;
+    public boolean isInvalidProKey() {
+        return keyState == -1;
     }
 
-    public void setKeyExpiry(long expiry) {
-        this.keyExpires = expiry;
-        putLong("keyExpires", keyExpires);
+    public int getKeyState() {
+        return keyState;
+    }
+
+    public void setKeyState(int keyState) {
+        this.keyState = keyState;
+        synchronized (PREFS) {
+            SharedPreferences.Editor editor = PREFS.edit();
+            editor.putInt("keyState", keyState);
+            editor.commit();
+        }
+    }
+
+    public long getNextKeyVerif() {
+        return nextKeyVerif;
+    }
+
+    public void setNextKeyVerif(long nextVerif) {
+        this.nextKeyVerif = nextVerif;
+        putLong("nextKeyVerif", nextKeyVerif);
     }
 
     public String getRedeemCode() {

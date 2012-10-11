@@ -72,13 +72,13 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
         bar.setDisplayHomeAsUpEnabled(true);
 
         cfg = Config.getInstance(getApplicationContext());
-        if (Utils.haveProKey(getApplicationContext()) && !cfg.hasValidProKey() &&
-                (!cfg.isProKeyTemporary() || cfg.getKeyExpires() < System.currentTimeMillis())) {
+
+        Utils.verifyKeyState(getApplicationContext());
+        if (Utils.needProKeyVerify(getApplicationContext())) {
             Utils.verifyProKey(getApplicationContext());
         }
 
         addPreferencesFromResource(R.xml.settings);
-
 
         notifPref = (CheckBoxPreference) findPreference("notif_pref");
         notifPref.setChecked(cfg.getShowNotif());
@@ -87,16 +87,20 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
         wifidlPref.setChecked(cfg.getWifiOnlyDl());
 
         prokeyPref = findPreference("prokey_pref");
-        if (Utils.haveProKey(getApplicationContext())) {
-            if (cfg.hasValidProKey()) {
-                prokeyPref.setSummary(R.string.settings_prokey_summary_pro);
+        if (cfg.hasValidProKey()) {
+            prokeyPref.setTitle(R.string.settings_prokey_title_pro);
+        }
+
+        if (cfg.hasValidProKey()) {
+            if (cfg.hasRedeemCode()) {
+                prokeyPref.setSummary(getString(R.string.settings_prokey_summary_redeemed, cfg.getRedeemCode()));
             } else if (cfg.isVerifyingProKey()) {
                 prokeyPref.setSummary(R.string.settings_prokey_summary_verifying);
-            } else {
+            } else if (cfg.isProKeyTemporary()) {
                 prokeyPref.setSummary(R.string.settings_prokey_summary_verify);
+            } else {
+                prokeyPref.setSummary(R.string.settings_prokey_summary_pro);
             }
-        } else if (cfg.hasValidProKey()) {
-            prokeyPref.setSummary(R.string.settings_prokey_summary_redeemed);
         } else if (!Utils.marketAvailable(getApplicationContext())) {
             prokeyPref.setSummary(R.string.settings_prokey_summary_nomarket);
         }
@@ -126,9 +130,22 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
             cfg.setIgnoredDataWarn(false);
             cfg.setIgnoredUnsupportedWarn(false);
         } else if (preference == prokeyPref) {
-            if (Utils.haveProKey(getApplicationContext())) {
-                if (cfg.hasValidProKey()) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            if (cfg.hasValidProKey()) {
+                if (cfg.hasRedeemCode()) {
+                    builder.setMessage(R.string.prokey_redeemed_thanks);
+                    builder.setNeutralButton(R.string.alert_close, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+                } else if (cfg.isVerifyingProKey()) {
+                    // do nothing
+                } else if (cfg.isProKeyTemporary()) {
+                    Utils.verifyProKey(getApplicationContext());
+                } else {
                     builder.setMessage(R.string.prokey_thanks);
                     builder.setNeutralButton(R.string.alert_close, new DialogInterface.OnClickListener() {
                         @Override
@@ -136,52 +153,9 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
                             dialog.dismiss();
                         }
                     });
-
-                    final AlertDialog dlg = builder.create();
-                    dlg.setOnShowListener(new DialogInterface.OnShowListener() {
-                        @Override
-                        public void onShow(DialogInterface dialog) {
-                            onDialogShown(dlg);
-                        }
-                    });
-                    dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                            onDialogClosed(dlg);
-                        }
-                    });
-                    dlg.show();
-                } else {
-                    Utils.verifyProKey(getApplicationContext());
                 }
-            } else if (cfg.hasValidProKey()) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setMessage(R.string.prokey_redeemed_thanks);
-                builder.setNeutralButton(R.string.alert_close, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-
-                final AlertDialog dlg = builder.create();
-                dlg.setOnShowListener(new DialogInterface.OnShowListener() {
-                    @Override
-                    public void onShow(DialogInterface dialog) {
-                        onDialogShown(dlg);
-                    }
-                });
-                dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        onDialogClosed(dlg);
-                    }
-                });
-                dlg.show();
             } else {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle(R.string.settings_prokey_title);
-
                 final boolean market = Utils.marketAvailable(this);
                 builder.setItems(market ? R.array.prokey_ops : R.array.prokey_ops_nomarket, new DialogInterface.OnClickListener() {
                     @Override
@@ -200,22 +174,22 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
                         }
                     }
                 });
-
-                final AlertDialog dlg = builder.create();
-                dlg.setOnShowListener(new DialogInterface.OnShowListener() {
-                    @Override
-                    public void onShow(DialogInterface dialog) {
-                        onDialogShown(dlg);
-                    }
-                });
-                dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        onDialogClosed(dlg);
-                    }
-                });
-                dlg.show();
             }
+
+            final AlertDialog dlg = builder.create();
+            dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface dialog) {
+                    onDialogShown(dlg);
+                }
+            });
+            dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    onDialogClosed(dlg);
+                }
+            });
+            dlg.show();
         } else if (preference == donatePref) {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.PP_DONATE_URL)));
         } else {

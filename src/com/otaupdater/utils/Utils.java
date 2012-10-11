@@ -172,19 +172,58 @@ public class Utils {
         return true;
     }
 
+    public static void verifyKeyState(Context ctx) {
+        Config cfg = Config.getInstance(ctx);
+        if (!haveProKey(ctx)) {
+            if (!cfg.hasRedeemCode()) cfg.setKeyState(Config.KEY_STATE_NONE);
+        } else if (!cfg.hasRedeemCode() && cfg.hasValidProKey() && cfg.isProKeyTemporary()) {
+            if (cfg.getNextKeyVerif() < System.currentTimeMillis() && !cfg.isVerifyingProKey()) {
+                verifyProKey(ctx);
+            }
+        }
+    }
+
     public static void verifyProKey(Context ctx) {
-        if (Config.getInstance(ctx).isVerifyingProKey()) return;
+        Config cfg = Config.getInstance(ctx);
+        if (!haveProKey(ctx)) return;
+        if (cfg.isVerifyingProKey()) return;
+
         if (ctx.getPackageManager().checkSignatures(ctx.getPackageName(), Config.KEY_PACKAGE) != PackageManager.SIGNATURE_MATCH) {
             Log.w(Config.LOG_TAG + "Key", "signatures don't match!");
             return;
         }
         Log.v(Config.LOG_TAG + "Key", "sending verify intent");
-        Config.getInstance(ctx).setKeyExpiry(-2);
+
+        int keyState = cfg.getKeyState();
+        if (keyState == Config.KEY_STATE_NOVERIF || keyState == Config.KEY_STATE_VERIF1_FAIL) {
+            cfg.setKeyState(Config.KEY_STATE_VERIF1_IP);
+        } else if (keyState == Config.KEY_STATE_VERIF1_GOOD || keyState == Config.KEY_STATE_VERIF2_FAIL) {
+            cfg.setKeyState(Config.KEY_STATE_VERIF2_IP);
+        } else {
+            return;
+        }
+
         Intent i = new Intent(Config.KEY_VERIFY_ACTION);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
             i.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
         }
         ctx.sendBroadcast(i);
+    }
+
+    public static boolean needProKeyVerify(Context ctx) {
+        Config cfg = Config.getInstance(ctx);
+        if (!haveProKey(ctx)) return false;
+        if (cfg.isVerifyingProKey()) return true;
+
+        int keyState = cfg.getKeyState();
+        if (keyState == Config.KEY_STATE_NOVERIF) return true;
+        if (keyState == Config.KEY_STATE_VERIF1_GOOD ||
+                keyState == Config.KEY_STATE_VERIF1_FAIL ||
+                keyState == Config.KEY_STATE_VERIF2_FAIL) {
+            return cfg.getNextKeyVerif() < System.currentTimeMillis();
+        }
+
+        return false;
     }
 
     public static boolean isRomOtaEnabled() {
