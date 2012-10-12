@@ -20,6 +20,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.support.v4.app.NavUtils;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockPreferenceActivity;
@@ -52,7 +53,7 @@ public class AccountsScreen extends SherlockPreferenceActivity implements OnPref
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            finish();
+            NavUtils.navigateUpFromSameTask(this);
             return true;
         }
         return false;

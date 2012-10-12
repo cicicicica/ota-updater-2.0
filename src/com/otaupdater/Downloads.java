@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -164,7 +165,7 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            finish();
+            NavUtils.navigateUpFromSameTask(this);
             return true;
         }
         return false;

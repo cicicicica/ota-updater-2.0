@@ -40,6 +40,7 @@ import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceScreen;
+import android.support.v4.app.NavUtils;
 import android.util.Log;
 
 import com.actionbarsherlock.app.ActionBar;
@@ -113,7 +114,7 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            finish();
+            NavUtils.navigateUpFromSameTask(this);
             return true;
         }
         return false;

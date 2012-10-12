@@ -84,21 +84,29 @@
         <activity
             android:name=".License"
             android:label="@string/app_license">
+            
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
         </activity>
         
         <activity 
             android:name=".Contributors"
             android:label="@string/app_contrib">
+            
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
         </activity>
 
         <activity
             android:name=".Settings"
             android:label="@string/app_settings">
+            
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
         </activity>
 
         <activity
             android:name=".Downloads"
             android:label="@string/app_downloads">
+            
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
         </activity>
         
         <receiver
@@ -115,6 +123,8 @@
         <activity
             android:name=".AccountsScreen"
             android:label="@string/app_accounts">
+            
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
         </activity>
 
     </application>
