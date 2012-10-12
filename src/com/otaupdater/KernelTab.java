@@ -62,7 +62,7 @@ public class KernelTab extends SherlockListFragment {
         DATA.add(item);
 
         item = new HashMap<String, Object>();
-        item.put("title", getString(R.string.main_rom));
+        item.put("title", getString(R.string.main_kernel));
         item.put("summary", Utils.getKernelVersion());
         item.put("icon", R.drawable.hammer);
         DATA.add(item);
@@ -76,7 +76,7 @@ public class KernelTab extends SherlockListFragment {
             }
 
             item = new HashMap<String, Object>();
-            item.put("title", getString(R.string.rom_version));
+            item.put("title", getString(R.string.kernel_version));
             item.put("summary", kernelVersion);
             item.put("icon", R.drawable.version);
             DATA.add(item);
