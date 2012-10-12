@@ -52,7 +52,7 @@ import com.otaupdater.DownloadService.BindUtil;
 import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.IDownloadService;
 import com.otaupdater.R;
-import com.otaupdater.TabDisplay;
+import com.otaupdater.OTAUpdaterActivity;
 
 public class KernelInfo implements Parcelable, Serializable {
     private static final long serialVersionUID = 2744694293064819593L;
@@ -126,8 +126,8 @@ public class KernelInfo implements Parcelable, Serializable {
     };
 
     public void showUpdateNotif(Context ctx) {
-        Intent mainInent = new Intent(ctx, TabDisplay.class);
-        mainInent.setAction(TabDisplay.KERNEL_NOTIF_ACTION);
+        Intent mainInent = new Intent(ctx, OTAUpdaterActivity.class);
+        mainInent.setAction(OTAUpdaterActivity.KERNEL_NOTIF_ACTION);
         this.addToIntent(mainInent);
         PendingIntent mainPIntent = PendingIntent.getActivity(ctx, 0, mainInent, PendingIntent.FLAG_CANCEL_CURRENT);
 

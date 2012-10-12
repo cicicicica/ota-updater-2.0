@@ -52,7 +52,7 @@ import com.otaupdater.utils.UserUtils;
 import com.otaupdater.utils.UserUtils.LoginCallback;
 import com.otaupdater.utils.Utils;
 
-public class Settings extends SherlockPreferenceActivity implements DialogCallback {
+public class SettingsActivity extends SherlockPreferenceActivity implements DialogCallback {
 
     private final ArrayList<Dialog> dlgs = new ArrayList<Dialog>();
 
@@ -204,10 +204,10 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
         if (cfg.isUserLoggedIn()) {
             new RedeemTask(this, this).execute();
         } else {
-            UserUtils.showLoginDialog(Settings.this, null, Settings.this, new LoginCallback() {
+            UserUtils.showLoginDialog(SettingsActivity.this, null, SettingsActivity.this, new LoginCallback() {
                 @Override
                 public void onLoggedIn(String username) {
-                    new RedeemTask(Settings.this, Settings.this).execute();
+                    new RedeemTask(SettingsActivity.this, SettingsActivity.this).execute();
                 }
 
                 @Override
@@ -269,15 +269,15 @@ public class Settings extends SherlockPreferenceActivity implements DialogCallba
             try {
                 JSONObject data = new JSONObject();
                 data.put("username", cfg.getUsername());
-                data.put("device_id", Utils.getDeviceID(Settings.this));
-                data.put("device_name", Utils.getDeviceName(Settings.this));
+                data.put("device_id", Utils.getDeviceID(SettingsActivity.this));
+                data.put("device_name", Utils.getDeviceName(SettingsActivity.this));
                 UserUtils.addNonce(data);
 
                 String dataStr = data.toString();
 
                 ArrayList<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();
                 params.add(new BasicNameValuePair("data_str", dataStr));
-                params.add(new BasicNameValuePair("mac", UserUtils.userHmac(Settings.this, dataStr)));
+                params.add(new BasicNameValuePair("mac", UserUtils.userHmac(SettingsActivity.this, dataStr)));
 
                 HttpPost req = new HttpPost(Config.CODE_REDEEM_URL);
                 req.setEntity(new UrlEncodedFormEntity(params));

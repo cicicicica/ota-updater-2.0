@@ -40,7 +40,7 @@ import com.google.android.gcm.GCMRegistrar;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.Utils;
 
-public class TabDisplay extends SherlockFragmentActivity {
+public class OTAUpdaterActivity extends SherlockFragmentActivity {
     public static final String ROM_NOTIF_ACTION = "com.otaupdater.action.ROM_NOTIF_ACTION";
     public static final String KERNEL_NOTIF_ACTION = "com.otaupdater.action.KERNEL_NOTIF_ACTION";
 
@@ -236,11 +236,11 @@ public class TabDisplay extends SherlockFragmentActivity {
         Intent i;
         switch (item.getItemId()) {
         case R.id.settings:
-            i = new Intent(this, Settings.class);
+            i = new Intent(this, SettingsActivity.class);
             startActivity(i);
             return true;
         case R.id.downloads:
-            i = new Intent(this, Downloads.class);
+            i = new Intent(this, DownloadsActivity.class);
             startActivity(i);
             return true;
         case R.id.accounts:

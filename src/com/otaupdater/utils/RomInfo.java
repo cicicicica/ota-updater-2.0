@@ -52,7 +52,7 @@ import com.otaupdater.DownloadService.BindUtil;
 import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.IDownloadService;
 import com.otaupdater.R;
-import com.otaupdater.TabDisplay;
+import com.otaupdater.OTAUpdaterActivity;
 
 public class RomInfo implements Parcelable, Serializable {
     private static final long serialVersionUID = 7138464743643950748L;
@@ -126,8 +126,8 @@ public class RomInfo implements Parcelable, Serializable {
     };
 
     public void showUpdateNotif(Context ctx) {
-        Intent mainIntent = new Intent(ctx, TabDisplay.class);
-        mainIntent.setAction(TabDisplay.ROM_NOTIF_ACTION);
+        Intent mainIntent = new Intent(ctx, OTAUpdaterActivity.class);
+        mainIntent.setAction(OTAUpdaterActivity.ROM_NOTIF_ACTION);
         this.addToIntent(mainIntent);
         PendingIntent mainPIntent = PendingIntent.getActivity(ctx, 0, mainIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 

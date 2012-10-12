@@ -107,10 +107,10 @@ public class AboutTab extends SherlockListFragment {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.WEB_HOME_URL)));
             break;
         case 2:
-            startActivity(new Intent(getActivity(), License.class));
+            startActivity(new Intent(getActivity(), LicenseActivity.class));
             break;
         case 3:
-            startActivity(new Intent(getActivity(), Contributors.class));
+            startActivity(new Intent(getActivity(), ContributorsActivity.class));
             break;
         case 4:
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.WEB_FEEDBACK_URL)));

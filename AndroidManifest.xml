@@ -43,7 +43,7 @@
         android:label="@string/app_name">
 
         <activity
-            android:name=".TabDisplay"
+            android:name=".OTAUpdaterActivity"
             android:label="@string/app_name">
 
             <intent-filter>
@@ -82,31 +82,31 @@
         </receiver>
 
         <activity
-            android:name=".License"
+            android:name=".LicenseActivity"
             android:label="@string/app_license">
             
-            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".OTAUpdaterActivity" />
         </activity>
         
         <activity 
-            android:name=".Contributors"
+            android:name=".ContributorsActivity"
             android:label="@string/app_contrib">
             
-            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".OTAUpdaterActivity" />
         </activity>
 
         <activity
-            android:name=".Settings"
+            android:name=".SettingsActivity"
             android:label="@string/app_settings">
             
-            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".OTAUpdaterActivity" />
         </activity>
 
         <activity
-            android:name=".Downloads"
+            android:name=".DownloadsActivity"
             android:label="@string/app_downloads">
             
-            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".OTAUpdaterActivity" />
         </activity>
         
         <receiver
@@ -124,7 +124,7 @@
             android:name=".AccountsScreen"
             android:label="@string/app_accounts">
             
-            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".TabDisplay" />
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".OTAUpdaterActivity" />
         </activity>
 
     </application>

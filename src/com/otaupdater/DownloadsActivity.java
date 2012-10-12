@@ -48,7 +48,7 @@ import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DlState;
 
-public class Downloads extends SherlockListActivity implements ActionBar.OnNavigationListener, ServiceConnection {
+public class DownloadsActivity extends SherlockListActivity implements ActionBar.OnNavigationListener, ServiceConnection {
     public static final String EXTRA_GOTO_TYPE = "goto_type";
     public static final int GOTO_TYPE_PENDING = 0;
     public static final int GOTO_TYPE_RECENT = 1;
@@ -69,10 +69,10 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
     private static final int REFRESH_DELAY = 1000;
     private final Handler REFRESH_HANDLER = new RefreshHandler(this);
     private static class RefreshHandler extends Handler {
-        private WeakReference<Downloads> downloadsAct;
+        private WeakReference<DownloadsActivity> downloadsAct;
 
-        public RefreshHandler(Downloads dls) {
-            downloadsAct = new WeakReference<Downloads>(dls);
+        public RefreshHandler(DownloadsActivity dls) {
+            downloadsAct = new WeakReference<DownloadsActivity>(dls);
         }
 
         @Override
@@ -83,13 +83,13 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        Downloads.this.service = IDownloadService.Stub.asInterface(service);
+        DownloadsActivity.this.service = IDownloadService.Stub.asInterface(service);
         updateFileList();
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        Downloads.this.service = null;
+        DownloadsActivity.this.service = null;
         updateFileList();
     }
 
@@ -281,7 +281,7 @@ public class Downloads extends SherlockListActivity implements ActionBar.OnNavig
 
             int status = state.getStatus();
             if (status == DlState.STATUS_RUNNING) {
-                bytesView.setText(state.getProgressStr(Downloads.this));
+                bytesView.setText(state.getProgressStr(DownloadsActivity.this));
 
                 if (state.getTotalSize() == 0) {
                     pctView.setVisibility(View.GONE);

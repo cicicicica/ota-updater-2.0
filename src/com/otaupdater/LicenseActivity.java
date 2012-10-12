@@ -31,7 +31,7 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.MenuItem;
 
-public class Contributors extends SherlockActivity {
+public class LicenseActivity extends SherlockActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +45,7 @@ public class Contributors extends SherlockActivity {
             data = new StringBuilder();
             char[] buf = new char[4096];
             int numRead;
-            in = new BufferedReader(new InputStreamReader(getAssets().open("contrib.txt")));
+            in = new BufferedReader(new InputStreamReader(getAssets().open("license.txt")));
             while ((numRead = in.read(buf)) >= 0) {
                 data.append(buf, 0, numRead);
             }
@@ -87,7 +87,7 @@ public class Contributors extends SherlockActivity {
     }
 
     private void showErrorAndFinish() {
-        Toast.makeText(this, R.string.toast_contrib_file_error, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.toast_license_file_error, Toast.LENGTH_LONG).show();
         finish();
     }
 }

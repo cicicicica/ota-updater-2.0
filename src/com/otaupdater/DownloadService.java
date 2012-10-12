@@ -482,16 +482,16 @@ public class DownloadService extends Service implements DownloadListener {
             builder.setSmallIcon(status == DlState.STATUS_RUNNING ? android.R.drawable.stat_sys_download : android.R.drawable.stat_sys_download_done);
 
             if (status == DlState.STATUS_COMPLETED) {
-                Intent i = new Intent(this, Downloads.class);
+                Intent i = new Intent(this, DownloadsActivity.class);
                 //TODO intent to flash shit
                 builder.setContentIntent(PendingIntent.getActivity(this, 1, i, 0));
             } else if (active) {
-                Intent i = new Intent(this, Downloads.class);
-                i.putExtra(Downloads.EXTRA_GOTO_TYPE, Downloads.GOTO_TYPE_PENDING);
+                Intent i = new Intent(this, DownloadsActivity.class);
+                i.putExtra(DownloadsActivity.EXTRA_GOTO_TYPE, DownloadsActivity.GOTO_TYPE_PENDING);
                 builder.setContentIntent(PendingIntent.getActivity(this, 2, i, 0));
             } else {
-                Intent i = new Intent(this, Downloads.class);
-                i.putExtra(Downloads.EXTRA_GOTO_TYPE, Downloads.GOTO_TYPE_RECENT);
+                Intent i = new Intent(this, DownloadsActivity.class);
+                i.putExtra(DownloadsActivity.EXTRA_GOTO_TYPE, DownloadsActivity.GOTO_TYPE_RECENT);
                 builder.setContentIntent(PendingIntent.getActivity(this, 3, i, 0));
             }
 
@@ -530,7 +530,7 @@ public class DownloadService extends Service implements DownloadListener {
                     i.putExtra(EXTRAL_DOWNLOAD_ID, state.getId());
                     builder.addAction(0, getString(R.string.notif_retry), PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT));
                 } else if (status == DlState.STATUS_COMPLETED) {
-                    Intent i = new Intent(this, Downloads.class);
+                    Intent i = new Intent(this, DownloadsActivity.class);
                     //TODO intent to flash shit
                     builder.addAction(0, getString(R.string.notif_flash), PendingIntent.getActivity(this, 8, i, 0));
                 }
