@@ -51,8 +51,8 @@ import com.otaupdater.DownloadService;
 import com.otaupdater.DownloadService.BindUtil;
 import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.IDownloadService;
-import com.otaupdater.R;
 import com.otaupdater.OTAUpdaterActivity;
+import com.otaupdater.R;
 
 public class KernelInfo implements Parcelable, Serializable {
     private static final long serialVersionUID = 2744694293064819593L;
@@ -216,12 +216,12 @@ public class KernelInfo implements Parcelable, Serializable {
         return Utils.sanitizeName(kernelName + "__" + version + ".zip");
     }
 
-    public void showUpdateDialog(final Context ctx) {
-        AlertDialog.Builder alert = new AlertDialog.Builder(ctx);
-        alert.setTitle(R.string.alert_update_title);
-        alert.setMessage(ctx.getString(R.string.alert_update_kernel_to, kernelName, version));
+    public void showUpdateDialog(final Context ctx, final DialogCallback callback) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(R.string.alert_update_title);
+        builder.setMessage(ctx.getString(R.string.alert_update_kernel_to, kernelName, version));
 
-        alert.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 dialog.dismiss();
@@ -230,28 +230,42 @@ public class KernelInfo implements Parcelable, Serializable {
         });
 
         if (changelog.length() != 0) {
-            alert.setNeutralButton(R.string.alert_changelog, new DialogInterface.OnClickListener() {
+            builder.setNeutralButton(R.string.alert_changelog, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
-                    showChangelogDialog(ctx);
+                    showChangelogDialog(ctx, callback);
                 }
             });
         }
 
-        alert.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
-        alert.show();
+
+        final AlertDialog dlg = builder.create();
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                if (callback != null) callback.onDialogShown(dlg);
+            }
+        });
+        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                if (callback != null) callback.onDialogClosed(dlg);
+            }
+        });
+        dlg.show();
     }
 
-    public void showChangelogDialog(final Context ctx) {
-        AlertDialog.Builder alert = new AlertDialog.Builder(ctx);
+    public void showChangelogDialog(final Context ctx, final DialogCallback callback) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
 
-        alert.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 dialog.dismiss();
@@ -259,13 +273,27 @@ public class KernelInfo implements Parcelable, Serializable {
             }
         });
 
-        alert.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
-        alert.show();
+
+        final AlertDialog dlg = builder.create();
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                if (callback != null) callback.onDialogShown(dlg);
+            }
+        });
+        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                if (callback != null) callback.onDialogClosed(dlg);
+            }
+        });
+        dlg.show();
     }
 
     public static void fetchInfo(Context ctx) {

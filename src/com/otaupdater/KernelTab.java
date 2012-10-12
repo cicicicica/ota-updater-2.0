@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,6 +33,7 @@ import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockListFragment;
 import com.otaupdater.utils.Config;
+import com.otaupdater.utils.DialogCallback;
 import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.KernelInfo.KernelInfoListener;
 import com.otaupdater.utils.Utils;
@@ -135,7 +137,8 @@ public class KernelTab extends SherlockListFragment {
             else if (cfg.hasStoredKernelUpdate()) {
                 KernelInfo info = cfg.getStoredKernelUpdate();
                 if (Utils.isKernelUpdate(info)) {
-                    info.showUpdateDialog(getActivity());
+                    Activity act = getActivity();
+                    info.showUpdateDialog(act, act instanceof DialogCallback ? (DialogCallback) act : null);
                 } else {
                     cfg.clearStoredKernelUpdate();
                     DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));

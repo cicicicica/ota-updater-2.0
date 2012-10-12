@@ -19,6 +19,7 @@ package com.otaupdater;
 import java.util.ArrayList;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -38,11 +39,16 @@ import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gcm.GCMRegistrar;
 import com.otaupdater.utils.Config;
+import com.otaupdater.utils.DialogCallback;
+import com.otaupdater.utils.KernelInfo;
+import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.Utils;
 
-public class OTAUpdaterActivity extends SherlockFragmentActivity {
+public class OTAUpdaterActivity extends SherlockFragmentActivity implements DialogCallback {
     public static final String ROM_NOTIF_ACTION = "com.otaupdater.action.ROM_NOTIF_ACTION";
     public static final String KERNEL_NOTIF_ACTION = "com.otaupdater.action.KERNEL_NOTIF_ACTION";
+
+    private final ArrayList<Dialog> dlgs = new ArrayList<Dialog>();
 
     private ViewPager mViewPager;
     private TabsAdapter mTabsAdapter;
@@ -55,8 +61,8 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity {
         final Context context = getApplicationContext();
         cfg = Config.getInstance(context);
 
-        if (Utils.needProKeyVerify(getApplicationContext())) {
-            Utils.verifyProKey(getApplicationContext());
+        if (Utils.needProKeyVerify(context)) {
+            Utils.verifyProKey(context);
         }
 
         if (!Utils.isRomOtaEnabled() && !Utils.isKernelOtaEnabled()) {
@@ -134,8 +140,19 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity {
         mTabsAdapter.addTab(bar.newTab().setText(R.string.main_kernel), KernelTab.class, null);
         mTabsAdapter.addTab(bar.newTab().setText(R.string.main_walls), WallsTab.class, null);
 
-        if (savedInstanceState != null) {
-            bar.setSelectedNavigationItem(savedInstanceState.getInt("tab", 0));
+        String action = getIntent().getAction();
+        if (ROM_NOTIF_ACTION.equals(action)) {
+            RomInfo.clearUpdateNotif(context);
+            bar.setSelectedNavigationItem(1);
+            RomInfo.fromIntent(getIntent()).showUpdateDialog(this, this);
+        } else if (KERNEL_NOTIF_ACTION.equals(action)) {
+            KernelInfo.clearUpdateNotif(context);
+            bar.setSelectedNavigationItem(2);
+            KernelInfo.fromIntent(getIntent()).showUpdateDialog(this, this);
+        } else {
+            if (savedInstanceState != null) {
+                bar.setSelectedNavigationItem(savedInstanceState.getInt("tab", 0));
+            }
         }
     }
 
@@ -225,6 +242,15 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        for (Dialog dlg : dlgs) {
+            if (dlg.isShowing()) dlg.dismiss();
+        }
+        dlgs.clear();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getSupportMenuInflater();
         inflater.inflate(R.menu.actionbar_menu, menu);
@@ -250,5 +276,15 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity {
         default:
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onDialogShown(Dialog dlg) {
+        dlgs.add(dlg);
+    }
+
+    @Override
+    public void onDialogClosed(Dialog dlg) {
+        dlgs.remove(dlg);
     }
 }
