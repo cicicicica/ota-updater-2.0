@@ -482,7 +482,7 @@ public class DownloadService extends Service implements DownloadListener {
                 if (status == DlState.STATUS_QUEUED || status == DlState.STATUS_STARTING || state.getTotalSize() == 0) {
                     builder.setProgress(0, 0, true);
                 } else {
-                    builder.setProgress(state.getTotalSize(), state.getTotalDone(), false);
+                    builder.setProgress((int) state.getTotalSize(), (int) state.getTotalDone(), false);
                     builder.setContentInfo(getString(R.string.downloads_pct_progress, Math.round(100.0f * (float) state.getPctDone())));
                 }
 
@@ -596,11 +596,11 @@ public class DownloadService extends Service implements DownloadListener {
         return getState(id).getStatus();
     }
 
-    public int getTotalSize(int id) {
+    public long getTotalSize(int id) {
         return getState(id).getTotalSize();
     }
 
-    public int getDoneSize(int id) {
+    public long getDoneSize(int id) {
         return getState(id).getTotalDone();
     }
 
@@ -673,12 +673,12 @@ public class DownloadService extends Service implements DownloadListener {
         }
 
         @Override
-        public int getTotalSize(int id) {
+        public long getTotalSize(int id) {
             return service.get().getTotalSize(id);
         }
 
         @Override
-        public int getDoneSize(int id) {
+        public long getDoneSize(int id) {
             return service.get().getDoneSize(id);
         }
 

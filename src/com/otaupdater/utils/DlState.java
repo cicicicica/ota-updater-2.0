@@ -50,8 +50,8 @@ public class DlState implements Parcelable, Serializable {
     private transient DownloadTask task;
 
     private int id;
-    private int totalSize = 0;
-    private int totalDone = 0;
+    private long totalSize = 0;
+    private long totalDone = 0;
     private int status;
     private int numRedirects = 0;
     private String redirectedURL = null;
@@ -129,19 +129,19 @@ public class DlState implements Parcelable, Serializable {
         this.task = task;
     }
 
-    public int getTotalSize() {
+    public long getTotalSize() {
         return totalSize;
     }
 
-    public void setTotalSize(int totalSize) {
+    public void setTotalSize(long totalSize) {
         this.totalSize = totalSize;
     }
 
-    public int getTotalDone() {
+    public long getTotalDone() {
         return totalDone;
     }
 
-    public void setTotalDone(int totalDone) {
+    public void setTotalDone(long totalDone) {
         this.totalDone = totalDone;
     }
 
@@ -154,8 +154,8 @@ public class DlState implements Parcelable, Serializable {
     }
 
     public String getProgressStr(Context ctx) {
-        int scaledDone = totalDone;
-        int scaledTotal = totalSize;
+        long scaledDone = totalDone;
+        long scaledTotal = totalSize;
 
         if (totalSize == 0) {
             int bytesTxtRes = R.string.downloads_size_progress_unknown_b;
@@ -343,8 +343,8 @@ public class DlState implements Parcelable, Serializable {
         if (isKernelDownload()) kernelInfo.writeToParcel(dest, flags);
 
         dest.writeInt(id);
-        dest.writeInt(totalSize);
-        dest.writeInt(totalDone);
+        dest.writeLong(totalSize);
+        dest.writeLong(totalDone);
         dest.writeInt(status);
         dest.writeInt(numRedirects);
         dest.writeString(redirectedURL);
@@ -378,8 +378,8 @@ public class DlState implements Parcelable, Serializable {
             if (state == null) return null;
 
             state.setId(source.readInt());
-            state.setTotalSize(source.readInt());
-            state.setTotalDone(source.readInt());
+            state.setTotalSize(source.readLong());
+            state.setTotalDone(source.readLong());
             state.setStatus(source.readInt());
             state.setNumRedirects(source.readInt());
             state.setRedirectURL(source.readString());

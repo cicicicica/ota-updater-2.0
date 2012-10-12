@@ -29,8 +29,8 @@ interface IDownloadService {
     void resume(int id);
     
     int getStatus(int id);
-    int getTotalSize(int id);
-    int getDoneSize(int id);
+    long getTotalSize(int id);
+    long getDoneSize(int id);
     
     DlState getDownload(int id);
     void getDownloads(out List<DlState> list);

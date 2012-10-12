@@ -232,7 +232,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                     if (headerTransferEncoding == null) {
                         header = resp.getFirstHeader("Content-Length");
                         if (header != null) {
-                            state.setTotalSize(Integer.parseInt(header.getValue()));
+                            state.setTotalSize(Long.parseLong(header.getValue()));
                             publishProgress(true);
                         }
                     }
@@ -291,7 +291,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                         state.setStatus(DlState.STATUS_FAILED);
                         return state.setResult(DownloadResult.FAILED_FILE_NOT_FOUND);
                     } else {
-                        state.setTotalSize((int) files[0].getSize());
+                        state.setTotalSize(files[0].getSize());
                         publishProgress(true);
 
                         StatFs stat = new StatFs(dir.getAbsolutePath());

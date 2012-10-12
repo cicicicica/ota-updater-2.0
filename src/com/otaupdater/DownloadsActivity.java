@@ -289,8 +289,8 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
                 } else {
                     pctView.setText(getString(R.string.downloads_pct_progress, Math.round(100.0f * (float) state.getPctDone())));
                     bytesView.setVisibility(View.VISIBLE);
-                    bar.setMax(state.getTotalSize());
-                    bar.setProgress(state.getTotalDone());
+                    bar.setMax((int) state.getTotalSize());
+                    bar.setProgress((int) state.getTotalDone());
                     bar.setIndeterminate(false);
                 }
                 bytesView.setVisibility(View.VISIBLE);
@@ -302,8 +302,8 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
                     bar.setVisibility(View.VISIBLE);
                 } else if (status == DlState.STATUS_PAUSED_USER) {
                     bar.setIndeterminate(false);
-                    bar.setMax(state.getTotalSize());
-                    bar.setProgress(state.getTotalDone());
+                    bar.setMax((int) state.getTotalSize());
+                    bar.setProgress((int) state.getTotalDone());
                     bar.setVisibility(View.VISIBLE);
                 } else {
                     bar.setVisibility(View.GONE);
