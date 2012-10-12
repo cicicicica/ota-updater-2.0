@@ -15,12 +15,10 @@ import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -87,91 +85,6 @@ public class DownloadService extends Service implements DownloadListener {
     private static final long WRITE_STATE_DELAY = 100;
     private static final String STATE_STORE_NAME = "service_state";
 
-    private final BroadcastReceiver INTENT_RECEIVER = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action == null) return;
-            Log.v(Config.LOG_TAG + "Service", "got action: " + action);
-
-            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
-                isNetStateDirty = true;
-                if (DOWNLOAD_THREADS.size() == 0 && DOWNLOAD_QUEUE.size() != 0) {
-                    tryStartQueue();
-                }
-            } else if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
-                if (DOWNLOAD_QUEUE.size() != 0) {
-                    tryStartQueue();
-                }
-            } else if (SERVICE_ACTION.equals(action)) {
-                int cmd = intent.getIntExtra(EXTRA_CMD, -1);
-                if (cmd == -1) return;
-                switch (cmd) {
-                case CMD_DOWNLOAD:
-                    int type = intent.getIntExtra(EXTRA_INFO_TYPE, -1);
-                    if (type == -1) return;
-
-                    switch (type) {
-                    case 1:
-                        queueDownload(RomInfo.fromIntent(intent));
-                        break;
-                    case 2:
-                        queueDownload(KernelInfo.fromIntent(intent));
-                        break;
-                    }
-
-                    break;
-                case CMD_PAUSE:
-                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                        pause(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
-                    } else {
-                        for (int id : DOWNLOAD_QUEUE) {
-                            if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_RUNNING) pause(id);
-                        }
-                    }
-                    break;
-                case CMD_RESUME:
-                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                        resume(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
-                    } else {
-                        for (int id : DOWNLOAD_QUEUE) {
-                            if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_PAUSED_USER) resume(id);
-                        }
-                    }
-                    break;
-                case CMD_CANCEL:
-                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                        cancel(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
-                    } else {
-                        for (int id : DOWNLOAD_QUEUE) {
-                            int status = DOWNLOADS.get(id).getStatus();
-                            if (status != DlState.STATUS_CANCELLED_USER &&
-                                    status != DlState.STATUS_COMPLETED &&
-                                    status != DlState.STATUS_FAILED) cancel(id);
-                        }
-                    }
-                    break;
-                case CMD_RETRY:
-                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                        int id = intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0);
-                        DlState state = DOWNLOADS.get(id);
-                        if (state != null) {
-                            int status = state.getStatus();
-                            if (status == DlState.STATUS_CANCELLED_USER ||
-                                    status == DlState.STATUS_COMPLETED ||
-                                    status == DlState.STATUS_FAILED) {
-                                state.resetState();
-                                DOWNLOAD_QUEUE.add(id);
-                                tryStartQueue();
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    };
-
     private static final int IDLE_DELAY = 60000;
     private final Handler DELAY_STOP_HANDLER = new StopHandler(this);
     private static class StopHandler extends Handler {
@@ -217,7 +130,83 @@ public class DownloadService extends Service implements DownloadListener {
         this.startId = startId;
 
         if (intent != null) {
-            INTENT_RECEIVER.onReceive(getApplicationContext(), intent);
+            String action = intent.getAction();
+            if (action != null) {
+                Log.v(Config.LOG_TAG + "Service", "got action: " + action);
+
+                if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
+                    isNetStateDirty = true;
+                    if (DOWNLOAD_THREADS.size() == 0 && DOWNLOAD_QUEUE.size() != 0) {
+                        tryStartQueue();
+                    }
+                } else if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+                    if (DOWNLOAD_QUEUE.size() != 0) {
+                        tryStartQueue();
+                    }
+                } else if (SERVICE_ACTION.equals(action)) {
+                    int cmd = intent.getIntExtra(EXTRA_CMD, -1);
+                    switch (cmd) {
+                    case CMD_DOWNLOAD:
+                        int type = intent.getIntExtra(EXTRA_INFO_TYPE, -1);
+                        switch (type) {
+                        case EXTRA_INFO_TYPE_ROM:
+                            queueDownload(RomInfo.fromIntent(intent));
+                            break;
+                        case EXTRA_INFO_TYPE_KERNEL:
+                            queueDownload(KernelInfo.fromIntent(intent));
+                            break;
+                        }
+
+                        break;
+                    case CMD_PAUSE:
+                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                            pause(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                        } else {
+                            for (int id : DOWNLOAD_QUEUE) {
+                                if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_RUNNING) pause(id);
+                            }
+                        }
+                        break;
+                    case CMD_RESUME:
+                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                            resume(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                        } else {
+                            for (int id : DOWNLOAD_QUEUE) {
+                                if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_PAUSED_USER) resume(id);
+                            }
+                        }
+                        break;
+                    case CMD_CANCEL:
+                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                            cancel(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                        } else {
+                            for (int id : DOWNLOAD_QUEUE) {
+                                int status = DOWNLOADS.get(id).getStatus();
+                                if (status != DlState.STATUS_CANCELLED_USER &&
+                                        status != DlState.STATUS_COMPLETED &&
+                                        status != DlState.STATUS_FAILED) cancel(id);
+                            }
+                        }
+                        break;
+                    case CMD_RETRY:
+                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                            int id = intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0);
+                            DlState state = DOWNLOADS.get(id);
+                            if (state != null) {
+                                int status = state.getStatus();
+                                if (status == DlState.STATUS_CANCELLED_USER ||
+                                        status == DlState.STATUS_COMPLETED ||
+                                        status == DlState.STATUS_FAILED) {
+                                    state.resetState();
+                                    DOWNLOAD_QUEUE.add(id);
+                                    tryStartQueue();
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         DELAY_STOP_HANDLER.removeCallbacksAndMessages(null);
@@ -234,11 +223,6 @@ public class DownloadService extends Service implements DownloadListener {
 
         cfg = Config.getInstance(getApplicationContext());
 
-        IntentFilter commandFilter = new IntentFilter();
-        commandFilter.addAction(SERVICE_ACTION);
-        commandFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(INTENT_RECEIVER, commandFilter);
-
         loadState();
 
         wakeLock = ((PowerManager) getSystemService(Context.POWER_SERVICE)).
@@ -251,7 +235,6 @@ public class DownloadService extends Service implements DownloadListener {
     @Override
     public void onDestroy() {
         DELAY_STOP_HANDLER.removeCallbacksAndMessages(null);
-        unregisterReceiver(INTENT_RECEIVER);
         wakeLock.release();
         super.onDestroy();
     }

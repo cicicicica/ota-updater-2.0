@@ -117,6 +117,8 @@
                 <action android:name="com.otaupdater.action.DL_ROM_ACTION" />
                 <action android:name="com.otaupdater.action.DL_KERNEL_ACTION" />
                 <action android:name="com.otaupdater.downloadservice.command" />
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
         
