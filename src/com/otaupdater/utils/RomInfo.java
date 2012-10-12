@@ -264,6 +264,8 @@ public class RomInfo implements Parcelable, Serializable {
 
     public void showChangelogDialog(final Context ctx, final DialogCallback callback) {
         AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(ctx.getString(R.string.alert_changelog_title, version));
+        builder.setMessage(changelog);
 
         builder.setPositiveButton(R.string.alert_download, new DialogInterface.OnClickListener() {
             @Override
