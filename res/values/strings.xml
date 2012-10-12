@@ -156,6 +156,7 @@
     <string name="downloads_size_progress_unknown_gb">%1$d GB</string>
     <string name="downloads_pct_progress">%1$d%%</string>
     <string name="downloads_queued">Waiting to Start&#8230;</string>
+    <string name="downloads_starting">Starting Download&#8230;</string>
     <string name="downloads_paused_wifi">Waiting for Wi-Fi&#8230;</string>
     <string name="downloads_paused_network">Waiting for Data connection&#8230;</string>
     <string name="downloads_paused_retry">Waiting to retry download&#8230;</string>
@@ -170,7 +171,8 @@
     <string name="downloads_failed_fileexists">Download failed: file already exists</string>
     <string name="downloads_failed_resume">Download failed: cannot resume download</string>
     <string name="downloads_none">No Downloads Found</string>
-    <string name="downloads_noservice">Not connected to download service &#8230;</string>
+    <string name="downloads_noservice">Not connected to download service!</string>
+    <string name="downloads_error_starting">Failed to start download!</string>
 
     <string name="license_title">License</string>
     <string name="license_apache_title">Apache License</string>

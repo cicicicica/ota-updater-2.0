@@ -33,7 +33,7 @@ import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockListFragment;
 import com.otaupdater.utils.Config;
-import com.otaupdater.utils.DialogCallback;
+import com.otaupdater.utils.DownloadDialogCallback;
 import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.KernelInfo.KernelInfoListener;
 import com.otaupdater.utils.Utils;
@@ -137,7 +137,7 @@ public class KernelTab extends SherlockListFragment {
                 KernelInfo info = cfg.getStoredKernelUpdate();
                 if (Utils.isKernelUpdate(info)) {
                     Activity act = getActivity();
-                    info.showUpdateDialog(act, act instanceof DialogCallback ? (DialogCallback) act : null);
+                    info.showUpdateDialog(act, act instanceof DownloadDialogCallback ? (DownloadDialogCallback) act : null);
                 } else {
                     cfg.clearStoredKernelUpdate();
                     DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));

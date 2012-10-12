@@ -33,7 +33,7 @@ import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockListFragment;
 import com.otaupdater.utils.Config;
-import com.otaupdater.utils.DialogCallback;
+import com.otaupdater.utils.DownloadDialogCallback;
 import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.RomInfo.RomInfoListener;
 import com.otaupdater.utils.Utils;
@@ -143,7 +143,7 @@ public class ROMTab extends SherlockListFragment {
                 RomInfo info = cfg.getStoredRomUpdate();
                 if (Utils.isRomUpdate(info)) {
                     Activity act = getActivity();
-                    info.showUpdateDialog(act, act instanceof DialogCallback ? (DialogCallback) act : null);
+                    info.showUpdateDialog(act, act instanceof DownloadDialogCallback ? (DownloadDialogCallback) act : null);
                 } else {
                     cfg.clearStoredRomUpdate();
                     DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));

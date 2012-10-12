@@ -20,7 +20,11 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Environment;
@@ -47,6 +51,7 @@ import com.otaupdater.DownloadService.BindUtil;
 import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DlState;
+import com.otaupdater.utils.DownloadDialogCallback;
 
 public class DownloadsActivity extends SherlockListActivity implements ActionBar.OnNavigationListener, ServiceConnection {
     public static final String EXTRA_GOTO_TYPE = "goto_type";
@@ -347,5 +352,59 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
 
             return convertView;
         }
+    }
+
+    public static Dialog showDownloadingDialog(final Context ctx, final IDownloadService service, final Token token,
+            final int dlID, final DownloadDialogCallback callback) {
+        DlState state = null;
+        try {
+            state = service.getDownload(dlID);
+        } catch (RemoteException e) { }
+
+        if (state == null) return null;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(R.string.alert_downloading);
+        builder.setMessage(ctx.getString(R.string.alert_downloading_changelog, state.getChangelog()));
+        builder.setCancelable(true);
+        builder.setPositiveButton(R.string.alert_hide, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                try {
+                    service.cancel(dlID);
+                } catch (RemoteException e) { }
+            }
+        });
+
+        final AlertDialog dlg = builder.create();
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                if (callback != null) {
+                    callback.onDialogShown(dlg);
+                    callback.onDownloadDialogShown(dlID, dlg);
+                }
+            }
+        });
+        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                if (callback != null) {
+                    callback.onDialogClosed(dlg);
+                    callback.onDownloadDialogClosed(dlID, dlg);
+                }
+                BindUtil.unbindFromService(token);
+            }
+        });
+        dlg.show();
+
+        return dlg;
     }
 }

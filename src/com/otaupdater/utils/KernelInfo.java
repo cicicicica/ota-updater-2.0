@@ -31,8 +31,10 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -45,11 +47,13 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.otaupdater.DownloadReceiver;
 import com.otaupdater.DownloadService;
 import com.otaupdater.DownloadService.BindUtil;
 import com.otaupdater.DownloadService.BindUtil.Token;
+import com.otaupdater.DownloadsActivity;
 import com.otaupdater.IDownloadService;
 import com.otaupdater.OTAUpdaterActivity;
 import com.otaupdater.R;
@@ -63,6 +67,9 @@ public class KernelInfo implements Parcelable, Serializable {
     public String url;
     public String md5;
     public Date date;
+
+    private transient Token serviceToken = null;
+    private transient Dialog downloadingDialog = null;
 
     public KernelInfo(String kernelName, String version, String changelog, String downurl, String md5, Date date) {
         this.kernelName = kernelName;
@@ -165,49 +172,35 @@ public class KernelInfo implements Parcelable, Serializable {
         ctx.startService(i);
     }
 
-    public void downloadFileDialog(final Context ctx) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-        builder.setTitle(R.string.alert_downloading);
-        builder.setMessage(ctx.getString(R.string.alert_downloading_changelog, changelog));
-        builder.setCancelable(true);
-        builder.setPositiveButton(R.string.alert_hide, new DialogInterface.OnClickListener() {
+    public void downloadFileDialog(final Context ctx, final DownloadDialogCallback callback) {
+        final Dialog tempDlg = ProgressDialog.show(ctx, "", ctx.getString(R.string.downloads_starting), true, false, new DialogInterface.OnCancelListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
+            public void onCancel(DialogInterface dialog) {
             }
         });
+        if (callback != null) callback.onDialogShown(tempDlg);
 
-        final AlertDialog dlg = builder.create();
-
-        final Token token = BindUtil.bindToService(ctx, new ServiceConnection() {
+        serviceToken = BindUtil.bindToService(ctx, new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder stub) {
                 final IDownloadService service = IDownloadService.Stub.asInterface(stub);
                 try {
                     final int dlID = service.queueKernelDownload(KernelInfo.this);
-                    dlg.setButton(DialogInterface.BUTTON_NEGATIVE, ctx.getString(android.R.string.cancel),
-                            new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                            try {
-                                service.cancel(dlID);
-                            } catch (RemoteException e) { }
-                        }
-                    });
-                } catch (RemoteException e) { }
+                    tempDlg.dismiss();
+                    if (callback != null) callback.onDialogClosed(tempDlg);
+                    downloadingDialog = DownloadsActivity.showDownloadingDialog(ctx, service, serviceToken, dlID, callback);
+                } catch (RemoteException e) {
+                    tempDlg.dismiss();
+                    if (callback != null) callback.onDialogClosed(tempDlg);
+                    Toast.makeText(ctx, R.string.downloads_error_starting, Toast.LENGTH_LONG).show();
+                }
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
-                if (dlg.isShowing()) dlg.dismiss();
-            }
-        });
-
-        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialog) {
-                BindUtil.unbindFromService(token);
+                if (downloadingDialog != null && downloadingDialog.isShowing()) downloadingDialog.dismiss();
+                downloadingDialog = null;
+                serviceToken = null;
             }
         });
     }
@@ -216,7 +209,7 @@ public class KernelInfo implements Parcelable, Serializable {
         return Utils.sanitizeName(kernelName + "__" + version + ".zip");
     }
 
-    public void showUpdateDialog(final Context ctx, final DialogCallback callback) {
+    public void showUpdateDialog(final Context ctx, final DownloadDialogCallback callback) {
         AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
         builder.setTitle(R.string.alert_update_title);
         builder.setMessage(ctx.getString(R.string.alert_update_kernel_to, kernelName, version));
@@ -225,7 +218,7 @@ public class KernelInfo implements Parcelable, Serializable {
             @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 dialog.dismiss();
-                downloadFileDialog(ctx);
+                downloadFileDialog(ctx, callback);
             }
         });
 
@@ -262,7 +255,7 @@ public class KernelInfo implements Parcelable, Serializable {
         dlg.show();
     }
 
-    public void showChangelogDialog(final Context ctx, final DialogCallback callback) {
+    public void showChangelogDialog(final Context ctx, final DownloadDialogCallback callback) {
         AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
         builder.setTitle(ctx.getString(R.string.alert_changelog_title, version));
         builder.setMessage(changelog);
@@ -271,7 +264,7 @@ public class KernelInfo implements Parcelable, Serializable {
             @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 dialog.dismiss();
-                downloadFileDialog(ctx);
+                downloadFileDialog(ctx, callback);
             }
         });
 

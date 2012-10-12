@@ -20,11 +20,14 @@ import java.util.ArrayList;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
@@ -38,13 +41,15 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gcm.GCMRegistrar;
+import com.otaupdater.DownloadService.BindUtil;
+import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.utils.Config;
-import com.otaupdater.utils.DialogCallback;
+import com.otaupdater.utils.DownloadDialogCallback;
 import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.Utils;
 
-public class OTAUpdaterActivity extends SherlockFragmentActivity implements DialogCallback {
+public class OTAUpdaterActivity extends SherlockFragmentActivity implements DownloadDialogCallback {
     public static final String ROM_NOTIF_ACTION = "com.otaupdater.action.ROM_NOTIF_ACTION";
     public static final String KERNEL_NOTIF_ACTION = "com.otaupdater.action.KERNEL_NOTIF_ACTION";
 
@@ -53,6 +58,9 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Dial
     private ViewPager mViewPager;
     private TabsAdapter mTabsAdapter;
     private Config cfg;
+
+    private Integer downloadDlgDlID = null;
+    private Token serviceToken = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,6 +160,20 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Dial
         } else {
             if (savedInstanceState != null) {
                 bar.setSelectedNavigationItem(savedInstanceState.getInt("tab", 0));
+                if (savedInstanceState.containsKey("dlID")) {
+                    final int dlID = savedInstanceState.getInt("dlID", 0);
+                    serviceToken = BindUtil.bindToService(this, new ServiceConnection() {
+                        @Override
+                        public void onServiceConnected(ComponentName name, IBinder stub) {
+                            final IDownloadService service = IDownloadService.Stub.asInterface(stub);
+                            DownloadsActivity.showDownloadingDialog(OTAUpdaterActivity.this, service, serviceToken, dlID, OTAUpdaterActivity.this);
+                        }
+                        @Override
+                        public void onServiceDisconnected(ComponentName name) {
+                            serviceToken = null;
+                        }
+                    });
+                }
             }
         }
     }
@@ -160,6 +182,7 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Dial
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("tab", getSupportActionBar().getSelectedNavigationIndex());
+        if (downloadDlgDlID != null) outState.putInt("dlID", downloadDlgDlID);
     }
 
     public static class TabsAdapter extends FragmentPagerAdapter
@@ -286,5 +309,15 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Dial
     @Override
     public void onDialogClosed(Dialog dlg) {
         dlgs.remove(dlg);
+    }
+
+    @Override
+    public void onDownloadDialogShown(int dlID, Dialog dlg) {
+        downloadDlgDlID = dlID;
+    }
+
+    @Override
+    public void onDownloadDialogClosed(int dlID, Dialog dlg) {
+        downloadDlgDlID = null;
     }
 }
