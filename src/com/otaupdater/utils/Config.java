@@ -320,6 +320,7 @@ public class Config {
     }
 
     public void storeRomUpdate(RomInfo info) {
+        this.storedRomUpdate = info;
         synchronized (PREFS) {
             SharedPreferences.Editor editor = PREFS.edit();
             editor.putString("rom_info_name", info.romName);
@@ -354,6 +355,7 @@ public class Config {
     }
 
     public void storeKernelUpdate(KernelInfo info) {
+        this.storedKernelUpdate = info;
         synchronized (PREFS) {
             SharedPreferences.Editor editor = PREFS.edit();
             editor.putString("kernel_info_name", info.kernelName);
