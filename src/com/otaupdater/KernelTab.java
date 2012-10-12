@@ -133,8 +133,7 @@ public class KernelTab extends SherlockListFragment {
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         if (position == AVAIL_UPDATES_IDX) {
-            if (!fetching) checkForKernelUpdates();
-            else if (cfg.hasStoredKernelUpdate()) {
+            if (cfg.hasStoredKernelUpdate()) {
                 KernelInfo info = cfg.getStoredKernelUpdate();
                 if (Utils.isKernelUpdate(info)) {
                     Activity act = getActivity();
@@ -143,7 +142,13 @@ public class KernelTab extends SherlockListFragment {
                     cfg.clearStoredKernelUpdate();
                     DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));
                     adapter.notifyDataSetChanged();
+
+                    if (!fetching) {
+                        checkForKernelUpdates();
+                    }
                 }
+            } else if (!fetching) {
+                checkForKernelUpdates();
             }
         }
     }

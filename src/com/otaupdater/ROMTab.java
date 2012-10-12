@@ -139,8 +139,7 @@ public class ROMTab extends SherlockListFragment {
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         if (position == AVAIL_UPDATES_IDX) {
-            if (!fetching) checkForRomUpdates();
-            else if (cfg.hasStoredRomUpdate()) {
+            if (cfg.hasStoredRomUpdate()) {
                 RomInfo info = cfg.getStoredRomUpdate();
                 if (Utils.isRomUpdate(info)) {
                     Activity act = getActivity();
@@ -149,7 +148,13 @@ public class ROMTab extends SherlockListFragment {
                     cfg.clearStoredRomUpdate();
                     DATA.get(AVAIL_UPDATES_IDX).put("summary", getString(R.string.updates_none));
                     adapter.notifyDataSetChanged();
+
+                    if (!fetching) {
+                        checkForRomUpdates();
+                    }
                 }
+            } else if (!fetching) {
+                checkForRomUpdates();
             }
         }
     }
