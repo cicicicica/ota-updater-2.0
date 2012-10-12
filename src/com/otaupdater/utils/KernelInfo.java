@@ -188,6 +188,7 @@ public class KernelInfo implements Parcelable, Serializable {
                     final int dlID = service.queueKernelDownload(KernelInfo.this);
                     tempDlg.dismiss();
                     if (callback != null) callback.onDialogClosed(tempDlg);
+                    KernelInfo.clearUpdateNotif(ctx);
                     downloadingDialog = DownloadsActivity.showDownloadingDialog(ctx, service, serviceToken, dlID, callback);
                 } catch (RemoteException e) {
                     tempDlg.dismiss();

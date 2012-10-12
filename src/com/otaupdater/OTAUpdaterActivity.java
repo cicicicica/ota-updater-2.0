@@ -174,6 +174,9 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Down
                         }
                     });
                 }
+            } else {
+                if (cfg.hasStoredRomUpdate()) cfg.getStoredRomUpdate().showUpdateNotif(this);
+                if (cfg.hasStoredKernelUpdate()) cfg.getStoredKernelUpdate().showUpdateNotif(this);
             }
         }
     }

@@ -188,6 +188,7 @@ public class RomInfo implements Parcelable, Serializable {
                     final int dlID = service.queueRomDownload(RomInfo.this);
                     tempDlg.dismiss();
                     if (callback != null) callback.onDialogClosed(tempDlg);
+                    RomInfo.clearUpdateNotif(ctx);
                     downloadingDialog = DownloadsActivity.showDownloadingDialog(ctx, service, serviceToken, dlID, callback);
                 } catch (RemoteException e) {
                     tempDlg.dismiss();
