@@ -169,12 +169,13 @@ public class Config {
         curDevice = android.os.Build.DEVICE.toLowerCase();
         curRomID = Utils.isRomOtaEnabled() ? Utils.getRomOtaID() : null;
         curKernelID = Utils.isKernelOtaEnabled() ? Utils.getKernelOtaID() : null;
-
-        Utils.verifyKeyState(ctx);
     }
     private static Config instance = null;
     public static synchronized Config getInstance(Context ctx) {
-        if (instance == null) instance = new Config(ctx);
+        if (instance == null) {
+            instance = new Config(ctx);
+            Utils.verifyKeyState(ctx);
+        }
         return instance;
     }
 
