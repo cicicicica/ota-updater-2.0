@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -197,7 +198,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                             } else if (statusCode >= 300 && statusCode < 400) {
                                 return state.setResult(DownloadResult.FAILED_UNHANDLED_REDIRECT);
                             } else if (statusCode >= 400 && statusCode < 600) {
-                                return state.setResult(DownloadResult.FAILED_HTTP_ERROR_CODE);
+                                return state.setResult(statusCode == 404 ? DownloadResult.FAILED_FILE_NOT_FOUND : DownloadResult.FAILED_HTTP_ERROR_CODE);
                             } else {
                                 return state.setResult(DownloadResult.FAILED_UNHANDLED_HTTP_CODE);
                             }
@@ -245,7 +246,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
                         }
                     }
 
-                    out = new FileOutputStream(dest);
+                    out = new FileOutputStream(dest, false);
                 } else {
                     publishProgress(true);
                 }
@@ -280,6 +281,29 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
 
                 ftpc.enterLocalPassiveMode();
                 ftpc.setFileType(FTP.BINARY_FILE_TYPE);
+
+                if (state.isContinuing()) {
+                    ftpc.setRestartOffset(state.getTotalDone());
+                    publishProgress(true);
+                } else {
+                    FTPFile[] files = ftpc.listFiles(dlUri.getPath());
+                    if (files == null || files.length == 0) {
+                        state.setStatus(DlState.STATUS_FAILED);
+                        return state.setResult(DownloadResult.FAILED_FILE_NOT_FOUND);
+                    } else {
+                        state.setTotalSize((int) files[0].getSize());
+                        publishProgress(true);
+
+                        StatFs stat = new StatFs(dir.getAbsolutePath());
+                        long availSpace = ((long) stat.getAvailableBlocks()) * ((long) stat.getBlockSize());
+                        if (state.getTotalSize() >= availSpace) {
+                            state.setStatus(DlState.STATUS_FAILED);
+                            return state.setResult(DownloadResult.FAILED_NOT_ENOUGH_SPACE);
+                        }
+
+                        out = new FileOutputStream(dest, false);
+                    }
+                }
 
                 in = ftpc.retrieveFileStream(dlUri.getPath());
             } else {
@@ -422,7 +446,7 @@ public class DownloadTask extends AsyncTask<Void, Boolean, DownloadResult> {
     }
 
     public static enum DownloadResult {
-        FINISHED, CANCELLED, PAUSED, RETRY_LATER, FAILED_UNKNOWN,
+        FINISHED, CANCELLED, PAUSED, RETRY_LATER, FAILED_UNKNOWN, FAILED_FILE_NOT_FOUND,
         FAILED_MOUNT_NOT_AVAILABLE, FAILED_NOT_ENOUGH_SPACE, FAILED_PROTOCAL_ERROR, FAILED_NETWORK_ERROR,
         FAILED_TOO_MANY_REDIRECTS, FAILED_TOO_MANY_RETRIES, FAILED_CANNOT_RESUME, FAILED_UNHANDLED_REDIRECT,
         FAILED_UNHANDLED_HTTP_CODE, FAILED_HTTP_ERROR_CODE, FAILED_FTP_LOGIN_ERROR, FAILED_CONNECTION_REFUSED
