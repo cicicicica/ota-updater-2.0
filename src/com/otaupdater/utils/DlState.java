@@ -18,6 +18,7 @@ package com.otaupdater.utils;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Date;
 
 import android.content.Context;
 import android.os.Parcel;
@@ -118,6 +119,36 @@ public class DlState implements Parcelable, Serializable {
 
     public KernelInfo getKernelInfo() {
         return kernelInfo;
+    }
+
+    public String getName() {
+        if (isRomDownload()) return romInfo.romName;
+        if (isKernelDownload()) return kernelInfo.kernelName;
+        return null;
+    }
+
+    public String getVersion() {
+        if (isRomDownload()) return romInfo.version;
+        if (isKernelDownload()) return kernelInfo.version;
+        return null;
+    }
+
+    public String getChangelog() {
+        if (isRomDownload()) return romInfo.changelog;
+        if (isKernelDownload()) return kernelInfo.changelog;
+        return null;
+    }
+
+    public String getMd5() {
+        if (isRomDownload()) return romInfo.md5;
+        if (isKernelDownload()) return kernelInfo.md5;
+        return null;
+    }
+
+    public Date getDate() {
+        if (isRomDownload()) return romInfo.date;
+        if (isKernelDownload()) return kernelInfo.date;
+        return null;
     }
 
     public String getSourceURL() {
