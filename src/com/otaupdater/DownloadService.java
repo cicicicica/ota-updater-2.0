@@ -161,6 +161,7 @@ public class DownloadService extends Service implements DownloadListener {
                     }
                 } else if (SERVICE_ACTION.equals(action)) {
                     int cmd = intent.getIntExtra(EXTRA_CMD, -1);
+                    Log.v(Config.LOG_TAG + "Service", "got service action, cmd= " + cmd);
                     switch (cmd) {
                     case CMD_DOWNLOAD:
                         int type = intent.getIntExtra(EXTRA_INFO_TYPE, -1);
@@ -455,8 +456,11 @@ public class DownloadService extends Service implements DownloadListener {
         if (DOWNLOAD_THREADS.size() <= 1) {
             DlState state = null;
             if (DOWNLOAD_THREADS.size() == 0) {
-                if (DOWNLOAD_QUEUE.size() == 0) return;
-                state = getState(DOWNLOAD_QUEUE.get(0));
+                if (DOWNLOAD_QUEUE.size() == 0) {
+                    state = DOWNLOADS.valueAt(DOWNLOADS.size() - 1);
+                } else {
+                    state = getState(DOWNLOAD_QUEUE.get(0));
+                }
             } else {
                 state = DOWNLOAD_THREADS.valueAt(0).getState();
             }
@@ -585,7 +589,11 @@ public class DownloadService extends Service implements DownloadListener {
                 state.getStatus() == DlState.STATUS_FAILED) return;
         state.setStatus(DlState.STATUS_CANCELLED_USER);
         DownloadTask task = DOWNLOAD_THREADS.get(id);
-        if (task == null) return;
+        if (task == null) {
+            updateStatusNotif();
+            saveState(true);
+            return;
+        }
         task.cancel();
     }
 
@@ -595,7 +603,11 @@ public class DownloadService extends Service implements DownloadListener {
         if (state.getStatus() != DlState.STATUS_RUNNING) return;
         state.setStatus(DlState.STATUS_PAUSED_USER);
         DownloadTask task = DOWNLOAD_THREADS.get(id);
-        if (task == null) return;
+        if (task == null) {
+            updateStatusNotif();
+            saveState(true);
+            return;
+        }
         task.pause();
     }
 
