@@ -325,6 +325,7 @@ public class DownloadService extends Service implements DownloadListener {
         } finally {
             if (os != null) {
                 try {
+                    os.flush();
                     os.close();
                 } catch (IOException e) {
                     e.printStackTrace();
