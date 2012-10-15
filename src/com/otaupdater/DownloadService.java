@@ -145,83 +145,81 @@ public class DownloadService extends Service implements DownloadListener {
     public int onStartCommand(Intent intent, int flags, int startId) {
         this.startId = startId;
 
-        if (intent != null) {
-            String action = intent.getAction();
-            if (action != null) {
-                Log.v(Config.LOG_TAG + "Service", "got action: " + action);
+        String action = intent == null ? null : intent.getAction();
+        if (action != null) {
+            Log.v(Config.LOG_TAG + "Service", "got action: " + action);
 
-                if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
-                    isNetStateDirty = true;
-                    if (DOWNLOAD_THREADS.size() == 0 && DOWNLOAD_QUEUE.size() != 0) {
-                        tryStartQueue();
+            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
+                isNetStateDirty = true;
+                if (DOWNLOAD_THREADS.size() == 0 && DOWNLOAD_QUEUE.size() != 0) {
+                    tryStartQueue();
+                }
+            } else if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+                if (DOWNLOAD_QUEUE.size() != 0) {
+                    tryStartQueue();
+                }
+            } else if (SERVICE_ACTION.equals(action)) {
+                int cmd = intent.getIntExtra(EXTRA_CMD, -1);
+                Log.v(Config.LOG_TAG + "Service", "got service action, cmd= " + cmd);
+                switch (cmd) {
+                case CMD_DOWNLOAD:
+                    int type = intent.getIntExtra(EXTRA_INFO_TYPE, -1);
+                    switch (type) {
+                    case EXTRA_INFO_TYPE_ROM:
+                        queueDownload(RomInfo.fromIntent(intent));
+                        break;
+                    case EXTRA_INFO_TYPE_KERNEL:
+                        queueDownload(KernelInfo.fromIntent(intent));
+                        break;
                     }
-                } else if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
-                    if (DOWNLOAD_QUEUE.size() != 0) {
-                        tryStartQueue();
-                    }
-                } else if (SERVICE_ACTION.equals(action)) {
-                    int cmd = intent.getIntExtra(EXTRA_CMD, -1);
-                    Log.v(Config.LOG_TAG + "Service", "got service action, cmd= " + cmd);
-                    switch (cmd) {
-                    case CMD_DOWNLOAD:
-                        int type = intent.getIntExtra(EXTRA_INFO_TYPE, -1);
-                        switch (type) {
-                        case EXTRA_INFO_TYPE_ROM:
-                            queueDownload(RomInfo.fromIntent(intent));
-                            break;
-                        case EXTRA_INFO_TYPE_KERNEL:
-                            queueDownload(KernelInfo.fromIntent(intent));
-                            break;
-                        }
 
-                        break;
-                    case CMD_PAUSE:
-                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                            pause(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
-                        } else {
-                            for (int id : DOWNLOAD_QUEUE) {
-                                if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_RUNNING) pause(id);
-                            }
+                    break;
+                case CMD_PAUSE:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        pause(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                    } else {
+                        for (int id : DOWNLOAD_QUEUE) {
+                            if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_RUNNING) pause(id);
                         }
-                        break;
-                    case CMD_RESUME:
-                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                            resume(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
-                        } else {
-                            for (int id : DOWNLOAD_QUEUE) {
-                                if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_PAUSED_USER) resume(id);
-                            }
-                        }
-                        break;
-                    case CMD_CANCEL:
-                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                            cancel(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
-                        } else {
-                            for (int id : DOWNLOAD_QUEUE) {
-                                int status = DOWNLOADS.get(id).getStatus();
-                                if (status != DlState.STATUS_CANCELLED_USER &&
-                                        status != DlState.STATUS_COMPLETED &&
-                                        status != DlState.STATUS_FAILED) cancel(id);
-                            }
-                        }
-                        break;
-                    case CMD_RETRY:
-                        if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                            int id = intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0);
-                            DlState state = DOWNLOADS.get(id);
-                            if (state != null) {
-                                int status = state.getStatus();
-                                if (status == DlState.STATUS_CANCELLED_USER ||
-                                        status == DlState.STATUS_COMPLETED ||
-                                        status == DlState.STATUS_FAILED) {
-                                    state.resetState();
-                                    DOWNLOAD_QUEUE.add(id);
-                                    tryStartQueue();
-                                }
-                            }
-                        }
-                        break;
                     }
+                    break;
+                case CMD_RESUME:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        resume(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                    } else {
+                        for (int id : DOWNLOAD_QUEUE) {
+                            if (DOWNLOADS.get(id).getStatus() == DlState.STATUS_PAUSED_USER) resume(id);
+                        }
+                    }
+                    break;
+                case CMD_CANCEL:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        cancel(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
+                    } else {
+                        for (int id : DOWNLOAD_QUEUE) {
+                            int status = DOWNLOADS.get(id).getStatus();
+                            if (status != DlState.STATUS_CANCELLED_USER &&
+                                    status != DlState.STATUS_COMPLETED &&
+                                    status != DlState.STATUS_FAILED) cancel(id);
+                        }
+                    }
+                    break;
+                case CMD_RETRY:
+                    if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
+                        int id = intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0);
+                        DlState state = DOWNLOADS.get(id);
+                        if (state != null) {
+                            int status = state.getStatus();
+                            if (status == DlState.STATUS_CANCELLED_USER ||
+                                    status == DlState.STATUS_COMPLETED ||
+                                    status == DlState.STATUS_FAILED) {
+                                state.resetState();
+                                DOWNLOAD_QUEUE.add(id);
+                                tryStartQueue();
+                            }
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -260,7 +258,7 @@ public class DownloadService extends Service implements DownloadListener {
     public void onStart(DlState state) {
         wakeLock.acquire();
         state.setStatus(DlState.STATUS_RUNNING);
-        updateStatusNotif();
+        updateStatusNotif(true);
     }
 
     @Override
@@ -280,7 +278,7 @@ public class DownloadService extends Service implements DownloadListener {
 
     @Override
     public void onLengthReceived(DlState state) {
-        updateStatusNotif();
+        updateStatusNotif(true);
         saveState(true);
     }
 
@@ -292,7 +290,7 @@ public class DownloadService extends Service implements DownloadListener {
 
     @Override
     public void onPause(DlState state) {
-        updateStatusNotif();
+        updateStatusNotif(true);
         cleanupFinish(state);
         saveState(true);
     }
@@ -302,7 +300,7 @@ public class DownloadService extends Service implements DownloadListener {
         if (result != DownloadResult.CANCELLED && result != DownloadResult.FINISHED && state.getStatus() != DlState.STATUS_FAILED) {
             DOWNLOAD_QUEUE.add(state.getId());
         }
-        updateStatusNotif();
+        updateStatusNotif(true);
         cleanupFinish(state);
         saveState(true);
     }
@@ -327,9 +325,7 @@ public class DownloadService extends Service implements DownloadListener {
                 try {
                     os.flush();
                     os.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) { }
             }
         }
     }
@@ -354,11 +350,8 @@ public class DownloadService extends Service implements DownloadListener {
             e.printStackTrace();
         } finally {
             if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                try { is.close(); }
+                catch (IOException e) { }
             }
         }
     }
@@ -399,17 +392,7 @@ public class DownloadService extends Service implements DownloadListener {
                 DownloadTask task = new DownloadTask(state, this, this);
                 DOWNLOAD_THREADS.put(id, task);
 
-//                RemoteViews statusView = new RemoteViews(getPackageName(), R.layout.download_status);
-//
-//                statusNotif = new Notification();
-//                statusNotif.contentView = statusView;
-//                statusNotif.flags |= Notification.FLAG_NO_CLEAR;
-//                statusNotif.icon = R.drawable.ic_download_default;
-//                statusNotif.contentIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-//                        new Intent(getApplicationContext(), Downloads.class), 0);
-//                startForeground(Config.DL_STATUS_NOTIF_ID, statusNotif);
-
-                updateStatusNotif();
+                updateStatusNotif(true);
 
                 task.execute();
                 it.remove();
@@ -429,7 +412,7 @@ public class DownloadService extends Service implements DownloadListener {
                     state.setStatus(DlState.STATUS_PAUSED_SYSTEM);
                 }
 
-                updateStatusNotif();
+                updateStatusNotif(true);
             }
         }
     }
@@ -441,12 +424,8 @@ public class DownloadService extends Service implements DownloadListener {
             wakeLock.release();
             DELAY_STOP_HANDLER.sendMessageDelayed(DELAY_STOP_HANDLER.obtainMessage(), IDLE_DELAY);
         } else {
-            updateStatusNotif();
+            updateStatusNotif(true);
         }
-    }
-
-    private void updateStatusNotif() {
-        updateStatusNotif(true);
     }
 
     private void updateStatusNotif(boolean force) {
@@ -591,7 +570,7 @@ public class DownloadService extends Service implements DownloadListener {
         state.setStatus(DlState.STATUS_CANCELLED_USER);
         DownloadTask task = DOWNLOAD_THREADS.get(id);
         if (task == null) {
-            updateStatusNotif();
+            updateStatusNotif(true);
             saveState(true);
             return;
         }
@@ -605,7 +584,7 @@ public class DownloadService extends Service implements DownloadListener {
         state.setStatus(DlState.STATUS_PAUSED_USER);
         DownloadTask task = DOWNLOAD_THREADS.get(id);
         if (task == null) {
-            updateStatusNotif();
+            updateStatusNotif(true);
             saveState(true);
             return;
         }
