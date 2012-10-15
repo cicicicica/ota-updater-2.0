@@ -206,18 +206,7 @@ public class DownloadService extends Service implements DownloadListener {
                     break;
                 case CMD_RETRY:
                     if (intent.hasExtra(EXTRAL_DOWNLOAD_ID)) {
-                        int id = intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0);
-                        DlState state = DOWNLOADS.get(id);
-                        if (state != null) {
-                            int status = state.getStatus();
-                            if (status == DlState.STATUS_CANCELLED_USER ||
-                                    status == DlState.STATUS_COMPLETED ||
-                                    status == DlState.STATUS_FAILED) {
-                                state.resetState();
-                                DOWNLOAD_QUEUE.add(id);
-                                tryStartQueue();
-                            }
-                        }
+                        retry(intent.getIntExtra(EXTRAL_DOWNLOAD_ID, 0));
                     }
                     break;
                 }
@@ -600,6 +589,20 @@ public class DownloadService extends Service implements DownloadListener {
         tryStartQueue();
     }
 
+    public void retry(int id) {
+        DlState state = DOWNLOADS.get(id);
+        if (state == null) return;
+
+        int status = state.getStatus();
+        if (status == DlState.STATUS_CANCELLED_USER ||
+                status == DlState.STATUS_COMPLETED ||
+                status == DlState.STATUS_FAILED) {
+            state.resetState();
+            DOWNLOAD_QUEUE.add(id);
+            tryStartQueue();
+        }
+    }
+
     public int getStatus(int id) {
         return getState(id).getStatus();
     }
@@ -703,6 +706,11 @@ public class DownloadService extends Service implements DownloadListener {
         @Override
         public void resume(int id) {
             service.get().resume(id);
+        }
+
+        @Override
+        public void retry(int id) {
+            service.get().retry(id);
         }
 
         @Override

@@ -27,6 +27,7 @@ interface IDownloadService {
     void cancel(int id);
     void pause(int id);
     void resume(int id);
+    void retry(int id);
     
     int getStatus(int id);
     long getTotalSize(int id);
