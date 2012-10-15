@@ -33,7 +33,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.support.v4.app.NavUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -53,7 +52,8 @@ import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DlState;
 import com.otaupdater.utils.DownloadDialogCallback;
 
-public class DownloadsActivity extends SherlockListActivity implements ActionBar.OnNavigationListener, ServiceConnection {
+public class DownloadsActivity extends SherlockListActivity implements
+        ActionBar.OnNavigationListener, ServiceConnection, DownloadDialogCallback {
     public static final String EXTRA_GOTO_TYPE = "goto_type";
     public static final int GOTO_TYPE_PENDING = 0;
     public static final int GOTO_TYPE_RECENT = 1;
@@ -66,6 +66,9 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
     private ArrayList<DlState> dlList = new ArrayList<DlState>();
     private DownloadAdapter dlAdapter = null;
 
+    private final ArrayList<Dialog> dlgs = new ArrayList<Dialog>();
+
+    private Integer downloadDlgDlID = null;
     private IDownloadService service = null;
     private Token token;
 
@@ -87,9 +90,11 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
     };
 
     @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-        DownloadsActivity.this.service = IDownloadService.Stub.asInterface(service);
+    public void onServiceConnected(ComponentName name, IBinder stub) {
+        service = IDownloadService.Stub.asInterface(stub);
         updateFileList();
+
+        if (downloadDlgDlID != null) DownloadsActivity.showDownloadingDialog(this, service, token, downloadDlgDlID, this);
     }
 
     @Override
@@ -119,8 +124,10 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
         bar.setListNavigationCallbacks(ArrayAdapter.createFromResource(this, R.array.download_types, android.R.layout.simple_spinner_dropdown_item), this);
 
         state = getIntent().getIntExtra(EXTRA_GOTO_TYPE, state);
-        if (!getIntent().hasExtra(EXTRA_GOTO_TYPE) && savedInstanceState != null) {
-            state = savedInstanceState.getInt("state", state);
+        if (savedInstanceState != null) {
+            if (!getIntent().hasExtra(EXTRA_GOTO_TYPE)) state = savedInstanceState.getInt("state", state);
+            if (savedInstanceState.containsKey("dlID")) downloadDlgDlID = savedInstanceState.getInt("dlID");
+            else downloadDlgDlID = null;
         }
         bar.setSelectedNavigationItem(state);
     }
@@ -140,7 +147,12 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
     @Override
     protected void onPause() {
         REFRESH_HANDLER.removeCallbacksAndMessages(null);
+        for (Dialog dlg : dlgs) {
+            if (dlg.isShowing()) dlg.dismiss();
+        }
+        dlgs.clear();
         super.onPause();
+
     }
 
     @Override
@@ -181,13 +193,29 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
         String path;
         if (state < 2) {
             DlState dlState = dlList.get(position);
-            path = dlState.getDestFile().getAbsolutePath();
+
+            int status = dlState.getStatus();
+            if (status == DlState.STATUS_COMPLETED) {
+              //TODO show install dialog if necessary
+            } else if (status == DlState.STATUS_FAILED) {
+                try {
+                    service.retry(dlState.getId());
+                    updateFileList();
+                } catch (RemoteException e) { }
+            } else if (status == DlState.STATUS_PAUSED_USER) {
+                try {
+                    service.resume(dlState.getId());
+                    updateFileList();
+                } catch (RemoteException e) { }
+            } else {
+                DownloadsActivity.showDownloadingDialog(this, service, token, downloadDlgDlID, this);
+                downloadDlgDlID = dlState.getId();
+            }
         } else {
             path = fileList.get(position);
             path = (state == 2 ? Config.ROM_DL_PATH : Config.KERNEL_DL_PATH) + path;
+            //TODO show install dialog if necessary
         }
-        Log.v(Config.LOG_TAG + "DL", "clicked on " + path);
-        //TODO show install dialog if necessary
     }
 
     private void updateFileList() {
@@ -241,6 +269,26 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
 
             REFRESH_HANDLER.removeCallbacksAndMessages(null);
         }
+    }
+
+    @Override
+    public void onDialogShown(Dialog dlg) {
+        dlgs.add(dlg);
+    }
+
+    @Override
+    public void onDialogClosed(Dialog dlg) {
+        dlgs.remove(dlg);
+    }
+
+    @Override
+    public void onDownloadDialogShown(int dlID, Dialog dlg) {
+        downloadDlgDlID = dlID;
+    }
+
+    @Override
+    public void onDownloadDialogClosed(int dlID, Dialog dlg) {
+        downloadDlgDlID = null;
     }
 
     private class DownloadAdapter extends BaseAdapter {
@@ -400,7 +448,6 @@ public class DownloadsActivity extends SherlockListActivity implements ActionBar
                     callback.onDialogClosed(dlg);
                     callback.onDownloadDialogClosed(dlID, dlg);
                 }
-                BindUtil.unbindFromService(token);
             }
         });
         dlg.show();

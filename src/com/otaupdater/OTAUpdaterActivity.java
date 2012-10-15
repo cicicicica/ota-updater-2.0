@@ -322,5 +322,6 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Down
     @Override
     public void onDownloadDialogClosed(int dlID, Dialog dlg) {
         downloadDlgDlID = null;
+        BindUtil.unbindFromService(serviceToken);
     }
 }
