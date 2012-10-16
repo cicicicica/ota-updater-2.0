@@ -518,6 +518,7 @@ public class DownloadService extends Service implements DownloadListener {
                     //TODO intent to flash shit
                     builder.addAction(0, getString(R.string.notif_flash), PendingIntent.getActivity(this, 8, i, 0));
                 }
+                builder.setAutoCancel(true);
                 state.setOneTimeNotifShown(true);
             }
 
