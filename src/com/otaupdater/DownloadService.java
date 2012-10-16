@@ -238,8 +238,20 @@ public class DownloadService extends Service implements DownloadListener {
 
     @Override
     public void onDestroy() {
+        if (serviceInUse || DOWNLOAD_THREADS.size() != 0) {
+            Log.w(Config.LOG_TAG + "Service", "onDestroy while service active!!");
+        }
+
         DELAY_STOP_HANDLER.removeCallbacksAndMessages(null);
         wakeLock.release();
+
+        for (int q = 0; q < DOWNLOAD_THREADS.size(); q++) {
+            DownloadTask task = DOWNLOAD_THREADS.valueAt(q);
+            DlState state = task.getState();
+            state.setStatus(DlState.STATUS_PAUSED_SYSTEM);
+            task.pause();
+        }
+
         super.onDestroy();
     }
 
