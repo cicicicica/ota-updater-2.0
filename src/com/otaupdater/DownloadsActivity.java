@@ -33,6 +33,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.support.v4.app.NavUtils;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -208,8 +209,8 @@ public class DownloadsActivity extends SherlockListActivity implements
                     updateFileList();
                 } catch (RemoteException e) { }
             } else {
-                DownloadsActivity.showDownloadingDialog(this, service, token, downloadDlgDlID, this);
                 downloadDlgDlID = dlState.getId();
+                DownloadsActivity.showDownloadingDialog(this, service, token, downloadDlgDlID, this);
             }
         } else {
             path = fileList.get(position);
@@ -282,12 +283,12 @@ public class DownloadsActivity extends SherlockListActivity implements
     }
 
     @Override
-    public void onDownloadDialogShown(int dlID, Dialog dlg) {
+    public void onDownloadDialogShown(int dlID, Dialog dlg, Token serviceToken) {
         downloadDlgDlID = dlID;
     }
 
     @Override
-    public void onDownloadDialogClosed(int dlID, Dialog dlg) {
+    public void onDownloadDialogClosed(int dlID, Dialog dlg, Token serviceToken) {
         downloadDlgDlID = null;
     }
 
@@ -404,49 +405,234 @@ public class DownloadsActivity extends SherlockListActivity implements
 
     public static Dialog showDownloadingDialog(final Context ctx, final IDownloadService service, final Token token,
             final int dlID, final DownloadDialogCallback callback) {
-        DlState state = null;
+        /*final*/ DlState initState = null;
         try {
-            state = service.getDownload(dlID);
+            initState = service.getDownload(dlID);
         } catch (RemoteException e) { }
 
-        if (state == null) return null;
+        if (initState == null) return null;
+        final int initStatus = initState.getStatus();
+
+        LayoutInflater inflater = LayoutInflater.from(ctx);
+        View view = inflater.inflate(R.layout.download_dialog, null);
+
+        TextView titleView = (TextView) view.findViewById(R.id.download_dlg_title);
+        TextView changelogView = (TextView) view.findViewById(R.id.download_dlg_changelog);
+
+        if (initState.isRomDownload()) {
+            titleView.setText(ctx.getString(R.string.alert_downloading_rom_title, initState.getName(), initState.getVersion()));
+        } else if (initState.isKernelDownload()) {
+            titleView.setText(ctx.getString(R.string.alert_downloading_kernel_title, initState.getName(), initState.getVersion()));
+        } else {
+            titleView.setText(ctx.getString(R.string.alert_downloading_title, initState.getName(), initState.getVersion()));
+        }
+
+        changelogView.setText(initState.getChangelog());
+
+        final TextView bytesView = (TextView) view.findViewById(R.id.download_dlg_bytes_txt);
+        final TextView pctView = (TextView) view.findViewById(R.id.download_dlg_pct_txt);
+        final TextView subtextView = (TextView) view.findViewById(R.id.download_dlg_subtext);
+        final ProgressBar progressView = (ProgressBar) view.findViewById(R.id.download_dlg_progress);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
         builder.setTitle(R.string.alert_downloading);
-        builder.setMessage(ctx.getString(R.string.alert_downloading_changelog, state.getChangelog()));
+        builder.setView(view);
         builder.setCancelable(true);
         builder.setPositiveButton(R.string.alert_hide, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
+                DlState state = null;
+                try {
+                    state = service.getDownload(dlID);
+                } catch (RemoteException e) { }
+
+                if (state == null) return;
+
+                int status = state.getStatus();
+                if (status == DlState.STATUS_RUNNING) {
+                    Toast.makeText(ctx, R.string.toast_downloading, Toast.LENGTH_SHORT).show();
+                }
             }
         });
+        builder.setNeutralButton(R.string.notif_pause, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialog, int which) { }
+        });
         builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                try {
-                    service.cancel(dlID);
-                } catch (RemoteException e) { }
-            }
+            @Override public void onClick(DialogInterface dialog, int which) { }
         });
 
         final AlertDialog dlg = builder.create();
+
+        final Handler REFRESH_HANDLER = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                DlState state = null;
+                try {
+                    state = service.getDownload(dlID);
+                } catch (RemoteException e) { }
+
+                if (state == null) return;
+
+                int status = state.getStatus();
+
+                boolean active = status != DlState.STATUS_CANCELLED_USER &&
+                        status != DlState.STATUS_COMPLETED &&
+                        status != DlState.STATUS_FAILED;
+
+                if (status == DlState.STATUS_COMPLETED) {
+                    dlg.getButton(DialogInterface.BUTTON_NEGATIVE).setText(R.string.notif_flash);
+                    progressView.setVisibility(View.GONE);
+                    bytesView.setVisibility(View.GONE);
+                    pctView.setVisibility(View.GONE);
+                } else if (status == DlState.STATUS_FAILED || status == DlState.STATUS_CANCELLED_USER) {
+                    dlg.getButton(DialogInterface.BUTTON_NEGATIVE).setText(R.string.notif_retry);
+                    progressView.setVisibility(View.GONE);
+                    bytesView.setVisibility(View.GONE);
+                    pctView.setVisibility(View.GONE);
+                } else {
+                    dlg.getButton(DialogInterface.BUTTON_NEGATIVE).setText(R.string.notif_cancel);
+                    progressView.setVisibility(View.VISIBLE);
+                }
+
+                if (active) {
+                    if (status == DlState.STATUS_QUEUED || status == DlState.STATUS_STARTING || state.getTotalSize() == 0) {
+                        progressView.setIndeterminate(true);
+                        pctView.setVisibility(View.GONE);
+                    } else {
+                        progressView.setIndeterminate(false);
+                        progressView.setMax((int) state.getTotalSize());
+                        progressView.setProgress((int) state.getTotalDone());
+                        pctView.setText(ctx.getString(R.string.downloads_pct_progress, Math.round(100.0f * (float) state.getPctDone())));
+                        pctView.setVisibility(View.VISIBLE);
+                    }
+
+                    if (status == DlState.STATUS_RUNNING) {
+                        bytesView.setText(state.getProgressStr(ctx));
+                        bytesView.setVisibility(View.VISIBLE);
+                        dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setText(R.string.notif_pause);
+                        dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.VISIBLE);
+                    } else if (status == DlState.STATUS_PAUSED_USER) {
+                        bytesView.setText(state.getProgressStr(ctx));
+                        bytesView.setVisibility(View.VISIBLE);
+                        dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setText(R.string.notif_resume);
+                        dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.VISIBLE);
+                    } else {
+                        bytesView.setVisibility(View.GONE);
+                        dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.GONE);
+                    }
+                } else {
+                    dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(View.GONE);
+                }
+
+                if (status == DlState.STATUS_RUNNING) {
+                    subtextView.setVisibility(View.GONE);
+                } else {
+                    int subtext = 0;
+                    switch (status) {
+                    case DlState.STATUS_QUEUED:
+                    case DlState.STATUS_STARTING:
+                        subtext = R.string.downloads_queued;
+                        break;
+                    case DlState.STATUS_FAILED:
+                        subtext = R.string.downloads_failed_unknown;
+                        break;
+                    case DlState.STATUS_PAUSED_FOR_DATA:
+                        subtext = R.string.downloads_paused_network;
+                        break;
+                    case DlState.STATUS_PAUSED_FOR_WIFI:
+                        subtext = R.string.downloads_paused_wifi;
+                        break;
+                    case DlState.STATUS_PAUSED_RETRY:
+                    case DlState.STATUS_PAUSED_SYSTEM:
+                        subtext = R.string.downloads_paused_retry;
+                        break;
+                    case DlState.STATUS_COMPLETED:
+                        subtext = R.string.notif_completed;
+                        break;
+                    case DlState.STATUS_PAUSED_USER:
+                        subtext = R.string.downloads_paused;
+                        break;
+                    case DlState.STATUS_CANCELLED_USER:
+                        subtext = R.string.downloads_cancelled;
+                        break;
+                    }
+                    subtextView.setText(ctx.getString(subtext));
+                    subtextView.setVisibility(View.VISIBLE);
+                }
+
+                this.sendMessageDelayed(this.obtainMessage(), REFRESH_DELAY);
+            }
+        };
+
         dlg.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
             public void onShow(DialogInterface dialog) {
+                dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        DlState state = null;
+                        try {
+                            state = service.getDownload(dlID);
+                        } catch (RemoteException e) { }
+
+                        if (state == null) return;
+
+                        int status = state.getStatus();
+                        if (status == DlState.STATUS_RUNNING) {
+                            try {
+                                service.pause(dlID);
+                            } catch (RemoteException e) { }
+                        } else if (status == DlState.STATUS_PAUSED_USER) {
+                            try {
+                                service.resume(dlID);
+                            } catch (RemoteException e) { }
+                        }
+                    }
+                });
+                dlg.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        DlState state = null;
+                        try {
+                            state = service.getDownload(dlID);
+                        } catch (RemoteException e) { }
+
+                        if (state == null) return;
+
+                        int status = state.getStatus();
+                        if (status == DlState.STATUS_COMPLETED) {
+                            dlg.dismiss();
+                            //TODO dialog to flash shit
+                        } else if (status == DlState.STATUS_FAILED || status == DlState.STATUS_CANCELLED_USER) {
+                            try {
+                                service.retry(dlID);
+                            } catch (RemoteException e) { }
+                        } else {
+                            dlg.dismiss();
+                            try {
+                                service.cancel(dlID);
+                            } catch (RemoteException e) { }
+                        }
+                    }
+                });
+
+                dlg.getButton(DialogInterface.BUTTON_NEUTRAL).setVisibility(initStatus == DlState.STATUS_RUNNING || initStatus == DlState.STATUS_PAUSED_USER ? View.VISIBLE : View.GONE);
+
+                REFRESH_HANDLER.sendMessage(REFRESH_HANDLER.obtainMessage());
                 if (callback != null) {
                     callback.onDialogShown(dlg);
-                    callback.onDownloadDialogShown(dlID, dlg);
+                    callback.onDownloadDialogShown(dlID, dlg, token);
                 }
             }
         });
         dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialog) {
+                REFRESH_HANDLER.removeCallbacksAndMessages(null);
                 if (callback != null) {
                     callback.onDialogClosed(dlg);
-                    callback.onDownloadDialogClosed(dlID, dlg);
+                    callback.onDownloadDialogClosed(dlID, dlg, token);
                 }
             }
         });

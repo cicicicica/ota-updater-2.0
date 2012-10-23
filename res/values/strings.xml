@@ -74,7 +74,9 @@
     <string name="alert_prune_title">Delete files older than</string>
     <string name="alert_retrieving">Retrieving Data&#8230;</string>
     <string name="alert_profile_title">Profile</string>
-    <string name="alert_downloading_changelog">Your download is in progress, check notifications for progress\n\nChangelog:\n%1$s</string>
+    <string name="alert_downloading_rom_title">Downloading ROM update (%1$s version %2$s)</string>
+    <string name="alert_downloading_kernel_title">Downloading kernel update (%1$s version %2$s)</string>
+    <string name="alert_downloading_title">Downloading update (%1$s version %2$s)</string>
 
     <string name="menu_account">Account</string>
     <string name="menu_downloads">Downloads</string>
@@ -96,6 +98,7 @@
     <string name="toast_nosd_shared">Your SD card is unavailable - mounted as USB Storage</string>
     <string name="toast_nosd_error">You SD card is unavailable</string>
     <string name="toast_blank_userpass_error">Please enter your username and password!!</string>
+    <string name="toast_downloading">Your download is still running, check notifications for progress&#8230;</string>
 
     <string name="about_ota_title">OTA Updater</string>
     <string name="about_ota_summary">Copyright &#169; 2012 - OTA Update Center\nFully open-source\nTap to visit our website</string>
@@ -173,6 +176,7 @@
     <string name="downloads_none">No Downloads Found</string>
     <string name="downloads_noservice">Not connected to download service!</string>
     <string name="downloads_error_starting">Failed to start download!</string>
+    <string name="downloads_changelog_title">Changelog:</string>
 
     <string name="license_title">License</string>
     <string name="license_apache_title">Apache License</string>
