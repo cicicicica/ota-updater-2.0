@@ -182,10 +182,76 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Down
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        for (Dialog dlg : dlgs) {
+            if (dlg.isShowing()) dlg.dismiss();
+        }
+        dlgs.clear();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (serviceToken != null) BindUtil.unbindFromService(serviceToken);
+        super.onDestroy();
+    }
+
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("tab", getSupportActionBar().getSelectedNavigationIndex());
         if (downloadDlgDlID != null) outState.putInt("dlID", downloadDlgDlID);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getSupportMenuInflater();
+        inflater.inflate(R.menu.actionbar_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Intent i;
+        switch (item.getItemId()) {
+        case R.id.settings:
+            i = new Intent(this, SettingsActivity.class);
+            startActivity(i);
+            return true;
+        case R.id.downloads:
+            i = new Intent(this, DownloadsActivity.class);
+            startActivity(i);
+            return true;
+        case R.id.accounts:
+            i = new Intent(this, AccountsScreen.class);
+            startActivity(i);
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public void onDialogShown(Dialog dlg) {
+        dlgs.add(dlg);
+    }
+
+    @Override
+    public void onDialogClosed(Dialog dlg) {
+        dlgs.remove(dlg);
+    }
+
+    @Override
+    public void onDownloadDialogShown(int dlID, Dialog dlg, Token token) {
+        serviceToken = token;
+        downloadDlgDlID = dlID;
+    }
+
+    @Override
+    public void onDownloadDialogClosed(int dlID, Dialog dlg, Token token) {
+        downloadDlgDlID = null;
+        BindUtil.unbindFromService(token);
+        serviceToken = null;
     }
 
     public static class TabsAdapter extends FragmentPagerAdapter
@@ -265,63 +331,5 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Down
         @Override
         public void onTabReselected(Tab tab, FragmentTransaction ft) {
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        for (Dialog dlg : dlgs) {
-            if (dlg.isShowing()) dlg.dismiss();
-        }
-        dlgs.clear();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getSupportMenuInflater();
-        inflater.inflate(R.menu.actionbar_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        Intent i;
-        switch (item.getItemId()) {
-        case R.id.settings:
-            i = new Intent(this, SettingsActivity.class);
-            startActivity(i);
-            return true;
-        case R.id.downloads:
-            i = new Intent(this, DownloadsActivity.class);
-            startActivity(i);
-            return true;
-        case R.id.accounts:
-            i = new Intent(this, AccountsScreen.class);
-            startActivity(i);
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public void onDialogShown(Dialog dlg) {
-        dlgs.add(dlg);
-    }
-
-    @Override
-    public void onDialogClosed(Dialog dlg) {
-        dlgs.remove(dlg);
-    }
-
-    @Override
-    public void onDownloadDialogShown(int dlID, Dialog dlg) {
-        downloadDlgDlID = dlID;
-    }
-
-    @Override
-    public void onDownloadDialogClosed(int dlID, Dialog dlg) {
-        downloadDlgDlID = null;
-        BindUtil.unbindFromService(serviceToken);
     }
 }

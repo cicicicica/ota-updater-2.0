@@ -18,8 +18,10 @@ package com.otaupdater.utils;
 
 import android.app.Dialog;
 
+import com.otaupdater.DownloadService.BindUtil.Token;
+
 public interface DownloadDialogCallback extends DialogCallback {
-    void onDownloadDialogShown(int dlID, Dialog dlg);
-    void onDownloadDialogClosed(int dlID, Dialog dlg);
+    void onDownloadDialogShown(int dlID, Dialog dlg, Token serviceToken);
+    void onDownloadDialogClosed(int dlID, Dialog dlg, Token serviceToken);
 }
 
