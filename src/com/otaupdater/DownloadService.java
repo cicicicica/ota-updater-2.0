@@ -570,12 +570,12 @@ public class DownloadService extends Service implements DownloadListener {
                 state.getStatus() == DlState.STATUS_COMPLETED ||
                 state.getStatus() == DlState.STATUS_FAILED) return;
         state.setStatus(DlState.STATUS_CANCELLED_USER);
+
+        updateStatusNotif(true);
+        saveState(true);
+
         DownloadTask task = DOWNLOAD_THREADS.get(id);
-        if (task == null) {
-            updateStatusNotif(true);
-            saveState(true);
-            return;
-        }
+        if (task == null) return;
         task.cancel();
     }
 
@@ -584,12 +584,12 @@ public class DownloadService extends Service implements DownloadListener {
         if (state == null) return;
         if (state.getStatus() != DlState.STATUS_RUNNING) return;
         state.setStatus(DlState.STATUS_PAUSED_USER);
+
+        updateStatusNotif(true);
+        saveState(true);
+
         DownloadTask task = DOWNLOAD_THREADS.get(id);
-        if (task == null) {
-            updateStatusNotif(true);
-            saveState(true);
-            return;
-        }
+        if (task == null) return;
         task.pause();
     }
 
@@ -599,6 +599,10 @@ public class DownloadService extends Service implements DownloadListener {
         if (state.getStatus() != DlState.STATUS_PAUSED_USER) return;
         state.setStatus(DlState.STATUS_QUEUED);
         DOWNLOAD_QUEUE.add(id);
+
+        updateStatusNotif(true);
+        saveState(true);
+
         tryStartQueue();
     }
 
@@ -612,6 +616,10 @@ public class DownloadService extends Service implements DownloadListener {
                 status == DlState.STATUS_FAILED) {
             state.resetState();
             DOWNLOAD_QUEUE.add(id);
+
+            updateStatusNotif(true);
+            saveState(true);
+
             tryStartQueue();
         }
     }
