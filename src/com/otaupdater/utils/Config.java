@@ -145,21 +145,29 @@ public class Config {
         lastKernelID = PREFS.getString("kernel_id", lastKernelID);
 
         if (PREFS.contains("rom_info_name")) {
-            storedRomUpdate = new RomInfo(PREFS.getString("rom_info_name", null),
-                    PREFS.getString("rom_info_version", null),
-                    PREFS.getString("rom_info_changelog", null),
-                    PREFS.getString("rom_info_url", null),
-                    PREFS.getString("rom_info_md5", null),
-                    Utils.parseDate(PREFS.getString("rom_info_date", null)));
+            if (Utils.isRomOtaEnabled()) {
+                storedRomUpdate = new RomInfo(PREFS.getString("rom_info_name", null),
+                        PREFS.getString("rom_info_version", null),
+                        PREFS.getString("rom_info_changelog", null),
+                        PREFS.getString("rom_info_url", null),
+                        PREFS.getString("rom_info_md5", null),
+                        Utils.parseDate(PREFS.getString("rom_info_date", null)));
+            } else {
+                clearStoredRomUpdate();
+            }
         }
 
         if (PREFS.contains("kernel_info_name")) {
-            storedKernelUpdate = new KernelInfo(PREFS.getString("kernel_info_name", null),
-                    PREFS.getString("kernel_info_version", null),
-                    PREFS.getString("kernel_info_changelog", null),
-                    PREFS.getString("kernel_info_url", null),
-                    PREFS.getString("kernel_info_md5", null),
-                    Utils.parseDate(PREFS.getString("kernel_info_date", null)));
+            if (Utils.isKernelOtaEnabled()) {
+                storedKernelUpdate = new KernelInfo(PREFS.getString("kernel_info_name", null),
+                        PREFS.getString("kernel_info_version", null),
+                        PREFS.getString("kernel_info_changelog", null),
+                        PREFS.getString("kernel_info_url", null),
+                        PREFS.getString("kernel_info_md5", null),
+                        Utils.parseDate(PREFS.getString("kernel_info_date", null)));
+            } else {
+                clearStoredKernelUpdate();
+            }
         }
 
         try {
