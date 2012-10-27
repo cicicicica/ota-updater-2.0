@@ -32,6 +32,7 @@ import android.util.Log;
 import com.google.android.gcm.GCMBaseIntentService;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.KernelInfo;
+import com.otaupdater.utils.PropUtils;
 import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.Utils;
 
@@ -53,7 +54,7 @@ public class GCMIntentService extends GCMBaseIntentService {
 
         String msgType = payload.getStringExtra("type");
         if (msgType.equals("rom")) {
-            if (!Utils.isRomOtaEnabled()) return;
+            if (!PropUtils.isRomOtaEnabled()) return;
 
             RomInfo info = RomInfo.fromIntent(payload);
 
@@ -72,7 +73,7 @@ public class GCMIntentService extends GCMBaseIntentService {
                 Log.v(Config.LOG_TAG + "GCM", "got rom GCM message, notif not shown");
             }
         } else if (msgType.equals("kernel")) {
-            if (!Utils.isKernelOtaEnabled()) return;
+            if (!PropUtils.isKernelOtaEnabled()) return;
 
             KernelInfo info = KernelInfo.fromIntent(payload);
 

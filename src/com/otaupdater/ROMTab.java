@@ -34,6 +34,7 @@ import android.widget.Toast;
 import com.actionbarsherlock.app.SherlockListFragment;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DownloadDialogCallback;
+import com.otaupdater.utils.PropUtils;
 import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.RomInfo.RomInfoListener;
 import com.otaupdater.utils.Utils;
@@ -67,10 +68,10 @@ public class ROMTab extends SherlockListFragment {
         item.put("icon", R.drawable.hammer);
         DATA.add(item);
 
-        if (Utils.isRomOtaEnabled()) {
-            String romVersion = Utils.getRomOtaVersion();
-            if (romVersion == null) romVersion = Utils.getRomVersion();
-            Date romDate = Utils.getRomOtaDate();
+        if (PropUtils.isRomOtaEnabled()) {
+            String romVersion = PropUtils.getRomOtaVersion();
+            if (romVersion == null) romVersion = PropUtils.getRomVersion();
+            Date romDate = PropUtils.getRomOtaDate();
             if (romDate != null) {
                 romVersion += " (" + DateFormat.getDateTimeInstance().format(romDate) + ")";
             }
@@ -83,7 +84,7 @@ public class ROMTab extends SherlockListFragment {
 
             item = new HashMap<String, Object>();
             item.put("title", getString(R.string.main_otaid));
-            item.put("summary", Utils.getRomOtaID());
+            item.put("summary", PropUtils.getRomOtaID());
             item.put("icon", R.drawable.key);
             DATA.add(item);
 
@@ -108,7 +109,7 @@ public class ROMTab extends SherlockListFragment {
 
             item = new HashMap<String, Object>();
             item.put("title", getString(R.string.rom_version));
-            item.put("summary", Utils.getRomVersion());
+            item.put("summary", PropUtils.getRomVersion());
             item.put("icon", R.drawable.version);
             DATA.add(item);
 
@@ -161,7 +162,7 @@ public class ROMTab extends SherlockListFragment {
 
     private void checkForRomUpdates() {
         if (fetching) return;
-        if (!Utils.isRomOtaEnabled()) return;
+        if (!PropUtils.isRomOtaEnabled()) return;
 
         RomInfo.fetchInfo(getActivity(), new RomInfoListener() {
             @Override

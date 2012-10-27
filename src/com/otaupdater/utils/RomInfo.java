@@ -317,7 +317,7 @@ public class RomInfo implements Parcelable, Serializable {
 
         @Override
         protected RomInfo doInBackground(Void... notused) {
-            if (!Utils.isRomOtaEnabled()) {
+            if (!PropUtils.isRomOtaEnabled()) {
                 error = context.getString(R.string.rom_unsupported_title);
                 return null;
             }
@@ -329,7 +329,7 @@ public class RomInfo implements Parcelable, Serializable {
             try {
                 ArrayList<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();
                 params.add(new BasicNameValuePair("device", android.os.Build.DEVICE.toLowerCase()));
-                params.add(new BasicNameValuePair("rom", Utils.getRomOtaID()));
+                params.add(new BasicNameValuePair("rom", PropUtils.getRomOtaID()));
 
                 HttpClient client = new DefaultHttpClient();
                 HttpGet get = new HttpGet(Config.ROM_PULL_URL + "?" + URLEncodedUtils.format(params, "UTF-8"));

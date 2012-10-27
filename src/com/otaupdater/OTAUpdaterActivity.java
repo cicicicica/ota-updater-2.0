@@ -46,6 +46,7 @@ import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DownloadDialogCallback;
 import com.otaupdater.utils.KernelInfo;
+import com.otaupdater.utils.PropUtils;
 import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.Utils;
 
@@ -73,7 +74,7 @@ public class OTAUpdaterActivity extends SherlockFragmentActivity implements Down
             Utils.verifyProKey(context);
         }
 
-        if (!Utils.isRomOtaEnabled() && !Utils.isKernelOtaEnabled()) {
+        if (!PropUtils.isRomOtaEnabled() && !PropUtils.isKernelOtaEnabled()) {
             if (!cfg.getIgnoredUnsupportedWarn()) {
                 AlertDialog.Builder alert = new AlertDialog.Builder(this);
                 alert.setTitle(R.string.alert_unsupported_title);

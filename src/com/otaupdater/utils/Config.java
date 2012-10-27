@@ -58,7 +58,7 @@ public class Config {
 
     public static final int WAKE_TIMEOUT = 30000;
 
-    public static final String DL_PATH = "/" + Utils.getOSSdPath() + "/OTA-Updater/download/";
+    public static final String DL_PATH = "/" + PropUtils.getOSSdPath() + "/OTA-Updater/download/";
     public static final String ROM_DL_PATH = DL_PATH + "ROM/";
     public static final String KERNEL_DL_PATH = DL_PATH + "kernel/";
 
@@ -145,7 +145,7 @@ public class Config {
         lastKernelID = PREFS.getString("kernel_id", lastKernelID);
 
         if (PREFS.contains("rom_info_name")) {
-            if (Utils.isRomOtaEnabled()) {
+            if (PropUtils.isRomOtaEnabled()) {
                 storedRomUpdate = new RomInfo(PREFS.getString("rom_info_name", null),
                         PREFS.getString("rom_info_version", null),
                         PREFS.getString("rom_info_changelog", null),
@@ -158,7 +158,7 @@ public class Config {
         }
 
         if (PREFS.contains("kernel_info_name")) {
-            if (Utils.isKernelOtaEnabled()) {
+            if (PropUtils.isKernelOtaEnabled()) {
                 storedKernelUpdate = new KernelInfo(PREFS.getString("kernel_info_name", null),
                         PREFS.getString("kernel_info_version", null),
                         PREFS.getString("kernel_info_changelog", null),
@@ -175,8 +175,8 @@ public class Config {
         } catch (NameNotFoundException e) {
         }
         curDevice = android.os.Build.DEVICE.toLowerCase();
-        curRomID = Utils.isRomOtaEnabled() ? Utils.getRomOtaID() : null;
-        curKernelID = Utils.isKernelOtaEnabled() ? Utils.getKernelOtaID() : null;
+        curRomID = PropUtils.isRomOtaEnabled() ? PropUtils.getRomOtaID() : null;
+        curKernelID = PropUtils.isKernelOtaEnabled() ? PropUtils.getKernelOtaID() : null;
     }
     private static Config instance = null;
     public static synchronized Config getInstance(Context ctx) {
@@ -305,13 +305,13 @@ public class Config {
         if (lastDevice == null) return false;
 
         boolean romIdUpToDate = true;
-        if (Utils.isRomOtaEnabled()) {
+        if (PropUtils.isRomOtaEnabled()) {
             if (lastRomID == null || curRomID == null) romIdUpToDate = false;
             else romIdUpToDate = curRomID.equals(lastRomID);
         } else if (lastRomID != null) romIdUpToDate = false;
 
         boolean kernelIdUpToDate = true;
-        if (Utils.isKernelOtaEnabled()) {
+        if (PropUtils.isKernelOtaEnabled()) {
             if (lastKernelID == null || curKernelID == null) kernelIdUpToDate = false;
             else kernelIdUpToDate = curKernelID.equals(lastKernelID);
         } else if (lastKernelID != null) kernelIdUpToDate = false;

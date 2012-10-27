@@ -36,6 +36,7 @@ import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DownloadDialogCallback;
 import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.KernelInfo.KernelInfoListener;
+import com.otaupdater.utils.PropUtils;
 import com.otaupdater.utils.Utils;
 
 public class KernelTab extends SherlockListFragment {
@@ -63,14 +64,14 @@ public class KernelTab extends SherlockListFragment {
 
         item = new HashMap<String, Object>();
         item.put("title", getString(R.string.main_kernel));
-        item.put("summary", Utils.getKernelVersion());
+        item.put("summary", PropUtils.getKernelVersion());
         item.put("icon", R.drawable.hammer);
         DATA.add(item);
 
-        if (Utils.isKernelOtaEnabled()) {
-            String kernelVersion = Utils.getKernelOtaVersion();
+        if (PropUtils.isKernelOtaEnabled()) {
+            String kernelVersion = PropUtils.getKernelOtaVersion();
             if (kernelVersion == null) kernelVersion = getString(R.string.kernel_version_unknown);
-            Date kernelDate = Utils.getKernelOtaDate();
+            Date kernelDate = PropUtils.getKernelOtaDate();
             if (kernelDate != null) {
                 kernelVersion += " (" + DateFormat.getDateTimeInstance().format(kernelDate) + ")";
             }
@@ -83,7 +84,7 @@ public class KernelTab extends SherlockListFragment {
 
             item = new HashMap<String, Object>();
             item.put("title", getString(R.string.main_otaid));
-            item.put("summary", Utils.getKernelOtaID());
+            item.put("summary", PropUtils.getKernelOtaID());
             item.put("icon", R.drawable.key);
             DATA.add(item);
 

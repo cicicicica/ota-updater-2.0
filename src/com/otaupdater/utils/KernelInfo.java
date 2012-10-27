@@ -317,7 +317,7 @@ public class KernelInfo implements Parcelable, Serializable {
 
         @Override
         protected KernelInfo doInBackground(Void... notused) {
-            if (!Utils.isKernelOtaEnabled()) {
+            if (!PropUtils.isKernelOtaEnabled()) {
                 error = context.getString(R.string.kernel_unsupported_title);
                 return null;
             }
@@ -329,7 +329,7 @@ public class KernelInfo implements Parcelable, Serializable {
             try {
                 ArrayList<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();
                 params.add(new BasicNameValuePair("device", android.os.Build.DEVICE.toLowerCase()));
-                params.add(new BasicNameValuePair("kernel", Utils.getKernelOtaID()));
+                params.add(new BasicNameValuePair("kernel", PropUtils.getKernelOtaID()));
 
                 HttpClient client = new DefaultHttpClient();
                 HttpGet get = new HttpGet(Config.KERNEL_PULL_URL + "?" + URLEncodedUtils.format(params, "UTF-8"));

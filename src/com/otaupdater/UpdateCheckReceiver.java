@@ -30,6 +30,7 @@ import com.google.android.gcm.GCMRegistrar;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.KernelInfo;
 import com.otaupdater.utils.KernelInfo.KernelInfoListener;
+import com.otaupdater.utils.PropUtils;
 import com.otaupdater.utils.RomInfo;
 import com.otaupdater.utils.RomInfo.RomInfoListener;
 import com.otaupdater.utils.Utils;
@@ -41,7 +42,7 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
         final Config cfg = Config.getInstance(context);
 
         if (cfg.hasStoredRomUpdate()) {
-            if (Utils.isRomOtaEnabled()) {
+            if (PropUtils.isRomOtaEnabled()) {
                 RomInfo info = cfg.getStoredRomUpdate();
                 if (Utils.isRomUpdate(info)) {
                     if (cfg.getShowNotif()) {
@@ -64,7 +65,7 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
         }
 
         if (cfg.hasStoredKernelUpdate()) {
-            if (Utils.isKernelOtaEnabled()) {
+            if (PropUtils.isKernelOtaEnabled()) {
                 KernelInfo info = cfg.getStoredKernelUpdate();
                 if (Utils.isKernelUpdate(info)) {
                     if (cfg.getShowNotif()) {
@@ -86,7 +87,7 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
             Log.v(Config.LOG_TAG + "Receiver", "No stored kernel update");
         }
 
-        if (Utils.isRomOtaEnabled() || Utils.isKernelOtaEnabled()) {
+        if (PropUtils.isRomOtaEnabled() || PropUtils.isKernelOtaEnabled()) {
             if (Utils.marketAvailable(context)) {
                 Log.v(Config.LOG_TAG + "Receiver", "Found market, trying GCM");
                 GCMRegistrar.checkDevice(context);
@@ -118,7 +119,7 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
 
                 PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
 
-                if (Utils.isRomOtaEnabled()) {
+                if (PropUtils.isRomOtaEnabled()) {
                     final WakeLock romWL = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, UpdateCheckReceiver.class.getName());
                     romWL.acquire();
 
@@ -148,7 +149,7 @@ public class UpdateCheckReceiver extends BroadcastReceiver {
                     });
                 }
 
-                if (Utils.isKernelOtaEnabled()) {
+                if (PropUtils.isKernelOtaEnabled()) {
                     final WakeLock kernelWL = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, UpdateCheckReceiver.class.getName());
                     kernelWL.acquire();
 
