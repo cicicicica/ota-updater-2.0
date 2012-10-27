@@ -207,7 +207,7 @@
     <string name="settings_prokey_summary_verifying">Thank you for buying the PRO Key!\nKey verification in progress&#8230;</string>
     <string name="settings_prokey_redeeming">Redeeming&#8230;</string>
     <string name="settings_donate_title">Donate</string>
-    <string name="settings_donate_summary">Any donations are greatly accepted and go directly to pay hosting costs</string>
+    <string name="settings_donate_summary">Any donations are greatly accepted and go directly to pay hosting and development costs</string>
     
     <string name="prokey_verified">Verified PRO Key! Thanks for your support!</string>
     <string name="prokey_noverify">Unable to verify PRO Key. Will try again later</string>
@@ -217,5 +217,8 @@
     <string name="prokey_verify_error_nodata">Unable to verify PRO Key - no data connection</string>
     <string name="prokey_verify_error_nomarket">Unable to verify PRO Key - Play Store not installed</string>
     <string name="prokey_verify_error_other">Unable to verify PRO Key - Unknown error</string>
+    <string name="prokey_only_feature_title">PRO-only Feature</string>
+    <string name="prokey_only_feature_message">This feature is only available for PRO Key users.\nPlease obtain a PRO Key in order to use this feature.</string>
+    <string name="prokey_only_get">Get PRO Key</string>
 
 </resources>

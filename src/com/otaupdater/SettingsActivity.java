@@ -53,6 +53,7 @@ import com.otaupdater.utils.UserUtils.LoginCallback;
 import com.otaupdater.utils.Utils;
 
 public class SettingsActivity extends SherlockPreferenceActivity implements DialogCallback {
+    public static final String EXTRA_SHOW_GET_PROKEY_DLG = "show_get_prokey";
 
     private final ArrayList<Dialog> dlgs = new ArrayList<Dialog>();
 
@@ -108,6 +109,10 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
 
         resetWarnPref = findPreference("resetwarn_pref");
         donatePref = findPreference("donate_pref");
+
+        if (getIntent().getBooleanExtra(EXTRA_SHOW_GET_PROKEY_DLG, false)) {
+            showGetProKeyDialog();
+        }
     }
 
     @Override
@@ -131,9 +136,8 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
             cfg.setIgnoredDataWarn(false);
             cfg.setIgnoredUnsupportedWarn(false);
         } else if (preference == prokeyPref) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
             if (cfg.hasValidProKey()) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 if (cfg.hasRedeemCode()) {
                     builder.setMessage(R.string.prokey_redeemed_thanks);
                     builder.setNeutralButton(R.string.alert_close, new DialogInterface.OnClickListener() {
@@ -155,42 +159,24 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
                         }
                     });
                 }
-            } else {
-                builder.setTitle(R.string.settings_prokey_title);
-                final boolean market = Utils.marketAvailable(this);
-                builder.setItems(market ? R.array.prokey_ops : R.array.prokey_ops_nomarket, new DialogInterface.OnClickListener() {
+
+                final AlertDialog dlg = builder.create();
+                dlg.setOnShowListener(new DialogInterface.OnShowListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        which -= market ? 1 : 0;
-                        switch (which) {
-                        case -1:
-                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + Config.KEY_PACKAGE)));
-                            break;
-                        case 0:
-                            redeemProKey();
-                            break;
-                        case 1:
-                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.PP_DONATE_URL)));
-                            break;
-                        }
+                    public void onShow(DialogInterface dialog) {
+                        onDialogShown(dlg);
                     }
                 });
+                dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        onDialogClosed(dlg);
+                    }
+                });
+                dlg.show();
+            } else {
+                showGetProKeyDialog();
             }
-
-            final AlertDialog dlg = builder.create();
-            dlg.setOnShowListener(new DialogInterface.OnShowListener() {
-                @Override
-                public void onShow(DialogInterface dialog) {
-                    onDialogShown(dlg);
-                }
-            });
-            dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                @Override
-                public void onDismiss(DialogInterface dialog) {
-                    onDialogClosed(dlg);
-                }
-            });
-            dlg.show();
         } else if (preference == donatePref) {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.PP_DONATE_URL)));
         } else {
@@ -198,6 +184,44 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
         }
 
         return true;
+    }
+
+    private void showGetProKeyDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.settings_prokey_title);
+        final boolean market = Utils.marketAvailable(this);
+        builder.setItems(market ? R.array.prokey_ops : R.array.prokey_ops_nomarket, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                which -= market ? 1 : 0;
+                switch (which) {
+                case -1:
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + Config.KEY_PACKAGE)));
+                    break;
+                case 0:
+                    redeemProKey();
+                    break;
+                case 1:
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Config.PP_DONATE_URL)));
+                    break;
+                }
+            }
+        });
+
+        final AlertDialog dlg = builder.create();
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                onDialogShown(dlg);
+            }
+        });
+        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                onDialogClosed(dlg);
+            }
+        });
+        dlg.show();
     }
 
     private void redeemProKey() {

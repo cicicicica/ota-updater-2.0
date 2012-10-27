@@ -41,7 +41,9 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -55,6 +57,9 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
+import com.otaupdater.R;
+import com.otaupdater.SettingsActivity;
 
 public class Utils {
     public static String md5(String s) {
@@ -392,6 +397,42 @@ public class Utils {
         name = name.toLowerCase();
 
         return name;
+    }
+
+    public static void showProKeyOnlyFeatureDialog(final Context ctx, final DialogCallback callback) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+        builder.setTitle(R.string.prokey_only_feature_title);
+        builder.setMessage(R.string.prokey_only_feature_message);
+        builder.setPositiveButton(R.string.prokey_only_get, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                Intent i = new Intent(ctx, SettingsActivity.class);
+                i.putExtra(SettingsActivity.EXTRA_SHOW_GET_PROKEY_DLG, true);
+                ctx.startActivity(i);
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        final AlertDialog dlg = builder.create();
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                if (callback != null) callback.onDialogShown(dlg);
+            }
+        });
+        dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                if (callback != null) callback.onDialogClosed(dlg);
+            }
+        });
+        dlg.show();
     }
 
     private static final char[] HEX_DIGITS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
