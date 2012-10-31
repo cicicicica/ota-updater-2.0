@@ -37,6 +37,13 @@
             android:defaultValue="true" 
             android:key="wifidl_pref" />
         
+        <CheckBoxPreference 
+            android:title="@string/settings_autodl_title"
+            android:summaryOn="@string/settings_autodl_summary_on"
+            android:summaryOff="@string/settings_autodl_summary_off"
+            android:defaultValue="false"
+            android:key="autodl_pref" />
+        
         <Preference
             android:title="@string/settings_resetwarn_title"
             android:summary="@string/settings_resetwarn_summary"

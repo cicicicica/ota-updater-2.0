@@ -102,6 +102,7 @@ public class Config {
 
     private boolean showNotif = true;
     private boolean wifiOnlyDl = true;
+    private boolean autoDl = false;
     private boolean ignoredUnsupportedWarn = false;
     private boolean ignoredDataWarn = false;
 
@@ -136,6 +137,7 @@ public class Config {
 
         showNotif = PREFS.getBoolean("showNotif", showNotif);
         wifiOnlyDl = PREFS.getBoolean("wifiOnlyDl", wifiOnlyDl);
+        autoDl = PREFS.getBoolean("autoDl", autoDl);
         ignoredUnsupportedWarn = PREFS.getBoolean("ignoredUnsupportedWarn", ignoredUnsupportedWarn);
         ignoredDataWarn = PREFS.getBoolean("ignoredDataWarn", ignoredDataWarn);
 
@@ -258,6 +260,15 @@ public class Config {
     public void setWifiOnlyDl(boolean wifiOnlyDl) {
         this.wifiOnlyDl = wifiOnlyDl;
         putBoolean("wifiOnlyDl", wifiOnlyDl);
+    }
+
+    public boolean getAutoDlState() {
+        return autoDl;
+    }
+
+    public void setAutoDlState(boolean autoDl) {
+        this.autoDl = autoDl;
+        putBoolean("autoDl", autoDl);
     }
 
     public boolean getIgnoredUnsupportedWarn() {

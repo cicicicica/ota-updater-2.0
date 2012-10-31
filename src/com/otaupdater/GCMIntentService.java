@@ -72,6 +72,8 @@ public class GCMIntentService extends GCMBaseIntentService {
             } else {
                 Log.v(Config.LOG_TAG + "GCM", "got rom GCM message, notif not shown");
             }
+
+            if (cfg.hasValidProKey() && cfg.getAutoDlState()) info.downloadFileSilent(ctx);
         } else if (msgType.equals("kernel")) {
             if (!PropUtils.isKernelOtaEnabled()) return;
 
@@ -91,6 +93,8 @@ public class GCMIntentService extends GCMBaseIntentService {
             } else {
                 Log.v(Config.LOG_TAG + "GCM", "got kernel GCM message, notif not shown");
             }
+
+            if (cfg.hasValidProKey() && cfg.getAutoDlState()) info.downloadFileSilent(ctx);
         }
     }
 

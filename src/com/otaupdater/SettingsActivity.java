@@ -61,6 +61,7 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
 
     private CheckBoxPreference notifPref;
     private CheckBoxPreference wifidlPref;
+    private CheckBoxPreference autodlPref;
     private Preference resetWarnPref;
     private Preference prokeyPref;
     private Preference donatePref;
@@ -87,6 +88,9 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
 
         wifidlPref = (CheckBoxPreference) findPreference("wifidl_pref");
         wifidlPref.setChecked(cfg.getWifiOnlyDl());
+
+        autodlPref = (CheckBoxPreference) findPreference("autodl_pref");
+        autodlPref.setChecked(cfg.getAutoDlState());
 
         prokeyPref = findPreference("prokey_pref");
         if (cfg.hasValidProKey()) {
@@ -132,6 +136,8 @@ public class SettingsActivity extends SherlockPreferenceActivity implements Dial
             cfg.setShowNotif(notifPref.isChecked());
         } else if (preference == wifidlPref) {
             cfg.setWifiOnlyDl(wifidlPref.isChecked());
+        } else if (preference == autodlPref) {
+            cfg.setAutoDlState(autodlPref.isChecked());
         } else if (preference == resetWarnPref) {
             cfg.setIgnoredDataWarn(false);
             cfg.setIgnoredUnsupportedWarn(false);
