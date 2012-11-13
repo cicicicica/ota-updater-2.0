@@ -45,6 +45,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.support.v4.app.NotificationCompat;
+import android.app.Notification;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -433,7 +434,7 @@ public class DownloadService extends Service implements DownloadListener {
         if (System.currentTimeMillis() < minNextNotifUpdate && !force) return;
         minNextNotifUpdate = System.currentTimeMillis() + NOTIF_REFRESH_DELAY;
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        Notification.Builder builder = new Notification.Builder(this);
         if (DOWNLOAD_THREADS.size() <= 1) {
             DlState state = null;
             if (DOWNLOAD_THREADS.size() == 0) {

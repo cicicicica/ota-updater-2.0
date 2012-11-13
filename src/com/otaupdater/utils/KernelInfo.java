@@ -46,6 +46,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
+import android.app.Notification;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -143,15 +144,15 @@ public class KernelInfo implements Parcelable, Serializable {
         this.addToIntent(dlInent);
         PendingIntent dlPIntent = PendingIntent.getBroadcast(ctx, 0, dlInent, PendingIntent.FLAG_CANCEL_CURRENT);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx);
+        Notification.Builder builder = new Notification.Builder(ctx);
         builder.setContentIntent(mainPIntent);
         builder.setContentTitle(ctx.getString(R.string.notif_source));
         builder.setContentText(ctx.getString(R.string.notif_text_kernel));
         builder.setTicker(ctx.getString(R.string.notif_text_kernel));
         builder.setWhen(System.currentTimeMillis());
         builder.setSmallIcon(R.drawable.updates);
-        builder.setStyle(new NotificationCompat.BigTextStyle().bigText(ctx.getString(R.string.notif_text_kernel_detailed, changelog)));
-        builder.setPriority(NotificationCompat.PRIORITY_LOW);
+        builder.setStyle(new Notification.BigTextStyle().bigText(ctx.getString(R.string.notif_text_kernel_detailed, changelog)));
+        builder.setPriority(Notification.PRIORITY_LOW);
         builder.addAction(R.drawable.ic_download_default, ctx.getString(R.string.notif_download), dlPIntent);
 
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
