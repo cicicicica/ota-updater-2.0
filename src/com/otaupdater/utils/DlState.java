@@ -168,6 +168,12 @@ public class DlState implements Parcelable, Serializable {
         return null; //should never happen
     }
 
+    public String getRCFilePath() {
+        if (isRomDownload()) return Config.ROM_RC_PATH + romInfo.getDownloadFileName();
+        if (isKernelDownload()) return Config.KERNEL_RC_PATH + kernelInfo.getDownloadFileName();
+        return null; //should never happen
+    }
+
     public DownloadTask getTask() {
         return task;
     }

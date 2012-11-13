@@ -121,7 +121,8 @@ public class PropUtils {
         if (cachedRcvrySdPath == null) {
             ShellCommand cmd = new ShellCommand();
             CommandResult propResult = cmd.sh.runWaitFor("getprop " + Config.OTA_SD_PATH_RECOVERY_PROP);
-            if (propResult.stdout.length() == 0) return "sdcard";
+            //if (propResult.stdout.length() == 0) return "sdcard";
+            if (propResult.stdout.length() == 0) return "data/media";
             cachedRcvrySdPath = propResult.stdout;
         }
         return cachedRcvrySdPath;

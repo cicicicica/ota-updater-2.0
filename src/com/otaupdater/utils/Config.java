@@ -66,6 +66,11 @@ public class Config {
     public static final File ROM_DL_PATH_FILE = new File(ROM_DL_PATH);
     public static final File KERNEL_DL_PATH_FILE = new File(KERNEL_DL_PATH);
 
+    public static final String RC_PATH = "/" + PropUtils.getRcvrySdPath() + "/OTA-Updater/download/";
+    public static final String ROM_RC_PATH = RC_PATH + "ROM/";
+    public static final String KERNEL_RC_PATH = RC_PATH + "kernel/";
+
+
     static {
         DL_PATH_FILE.mkdirs();
         ROM_DL_PATH_FILE.mkdirs();
