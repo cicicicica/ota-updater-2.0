@@ -52,6 +52,7 @@ import com.otaupdater.DownloadService.BindUtil.Token;
 import com.otaupdater.utils.Config;
 import com.otaupdater.utils.DlState;
 import com.otaupdater.utils.DownloadDialogCallback;
+import com.otaupdater.utils.Recovery;
 
 public class DownloadsActivity extends SherlockListActivity implements
         ActionBar.OnNavigationListener, ServiceConnection, DownloadDialogCallback {
@@ -197,7 +198,10 @@ public class DownloadsActivity extends SherlockListActivity implements
 
             int status = dlState.getStatus();
             if (status == DlState.STATUS_COMPLETED) {
-              //TODO show install dialog if necessary
+                //TODO show install dialog if necessary
+                path = dlState.getRCFilePath();
+                Recovery.showFlashDialog(this, path);
+
             } else if (status == DlState.STATUS_FAILED) {
                 try {
                     service.retry(dlState.getId());
@@ -214,8 +218,9 @@ public class DownloadsActivity extends SherlockListActivity implements
             }
         } else {
             path = fileList.get(position);
-            path = (state == 2 ? Config.ROM_DL_PATH : Config.KERNEL_DL_PATH) + path;
+            path = (state == 2 ? Config.ROM_RC_PATH : Config.KERNEL_RC_PATH) + path;
             //TODO show install dialog if necessary
+            Recovery.showFlashDialog(this, path);
         }
     }
 
@@ -597,6 +602,8 @@ public class DownloadsActivity extends SherlockListActivity implements
                     @Override
                     public void onClick(View v) {
                         DlState state = null;
+                        String path = null;
+
                         try {
                             state = service.getDownload(dlID);
                         } catch (RemoteException e) { }
@@ -607,6 +614,9 @@ public class DownloadsActivity extends SherlockListActivity implements
                         if (status == DlState.STATUS_COMPLETED) {
                             dlg.dismiss();
                             //TODO dialog to flash shit
+                            path = state.getRCFilePath();
+                            Recovery.showFlashDialog(ctx, path);
+
                         } else if (status == DlState.STATUS_FAILED || status == DlState.STATUS_CANCELLED_USER) {
                             try {
                                 service.retry(dlID);
