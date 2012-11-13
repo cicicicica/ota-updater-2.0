@@ -97,8 +97,11 @@ public class PropUtils {
     public static String getKernelVersion() {
         if (cachedKernelUname == null) {
             ShellCommand cmd = new ShellCommand();
-            CommandResult propResult = cmd.sh.runWaitFor("uname -r -v");
-            if (propResult.stdout.length() == 0) return null;
+            CommandResult propResult = cmd.sh.runWaitFor("cat /proc/version");
+
+            if (propResult == null || propResult.stdout.length() == 0)
+                return null;
+
             cachedKernelUname = propResult.stdout;
         }
         return cachedKernelUname;
