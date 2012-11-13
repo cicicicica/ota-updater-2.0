@@ -251,9 +251,12 @@ public class DownloadsActivity extends SherlockListActivity implements
             File dir = state == 2 ? Config.ROM_DL_PATH_FILE : Config.KERNEL_DL_PATH_FILE;
             File[] files = dir.listFiles();
             fileList.clear();
-            for (File file : files) {
-                if (file.isDirectory()) continue;
-                fileList.add(file.getName());
+            if (files != null)
+            {
+                for (File file : files) {
+                    if (file.isDirectory()) continue;
+                    fileList.add(file.getName());
+                }
             }
 
             if (fileAdapter == null) {
